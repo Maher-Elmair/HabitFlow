@@ -1,0 +1,153 @@
+/**
+ * Theme Variables
+ *
+ * Contains all CSS custom properties for colors, spacing, and other design tokens.
+ * Updated to match the new Teal & Aqua HabitFlow color system (scientifically accurate OKLCH).
+ */
+
+/* ============================================================================
+   LIGHT MODE THEME VARIABLES
+   ============================================================================ */
+
+:root {
+  /* Font Configuration */
+  font-family: var(--font-sans, system-ui), Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Color Scheme */
+  color-scheme: light dark;
+  color: rgba(15, 20, 25, 0.87);
+  background-color: #F8FAFA;
+
+  /* Font Rendering */
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Border Radius */
+  --radius: 0.75rem;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  /* Light Mode Colors - Teal & Aqua HabitFlow Theme */
+  --background: oklch(0.972 0.004 193); /* #F8FAFA */
+  --foreground: oklch(0.203 0.028 257); /* #0F1419 */
+  --card: oklch(1.000 0.000 0); /* #ffffff */
+  --card-foreground: oklch(0.203 0.028 257); /* #0F1419 */
+  --popover: oklch(1.000 0.000 0); /* #ffffff */
+  --popover-foreground: oklch(0.203 0.028 257); /* #0F1419 */
+  --primary: oklch(0.602 0.124 192); /* #0D9488 */
+  --primary-foreground: oklch(1.000 0.000 0); /* #ffffff */
+  --secondary: oklch(0.929 0.035 183); /* #E0F2F1 */
+  --secondary-foreground: oklch(0.203 0.028 257); /* #0F1419 */
+  --muted: oklch(0.956 0.009 238); /* #F1F5F9 */
+  --muted-foreground: oklch(0.578 0.061 248); /* #64748B */
+  --accent: oklch(0.946 0.070 179); /* #CCFBF1 */
+  --accent-foreground: oklch(0.203 0.028 257); /* #0F1419 */
+  --destructive: oklch(0.637 0.204 27); /* #EF4444 */
+  --destructive-foreground: oklch(1.000 0.000 0); /* #ffffff */
+  --border: oklch(0.935 0.013 248); /* #E2E8F0 */
+  --input: transparent;
+  --input-background: oklch(0.972 0.005 244); /* #F8FAFC */
+  --switch-background: oklch(0.835 0.021 233); /* #CBD5E1 */
+  --ring: oklch(0.602 0.124 192); /* #0D9488 */
+
+  /* Chart Colors - Teal Habit Progress Theme */
+  --chart-1: oklch(0.602 0.124 192); /* #0D9488 */
+  --chart-2: oklch(0.684 0.129 187); /* #14B8A6 */
+  --chart-3: oklch(0.764 0.118 182); /* #2DD4BF */
+  --chart-4: oklch(0.843 0.108 180); /* #5EEAD4 */
+  --chart-5: oklch(0.906 0.081 177); /* #99F6E4 */
+
+  /* Sidebar Colors - Teal HabitFlow Theme */
+  --sidebar: oklch(1.000 0.000 0); /* #ffffff */
+  --sidebar-foreground: oklch(0.203 0.028 257); /* #0F1419 */
+  --sidebar-primary: oklch(0.602 0.124 192); /* #0D9488 */
+  --sidebar-primary-foreground: oklch(1.000 0.000 0); /* #ffffff */
+  --sidebar-accent: oklch(0.956 0.009 238); /* #F1F5F9 */
+  --sidebar-accent-foreground: oklch(0.203 0.028 257); /* #0F1419 */
+  --sidebar-border: oklch(0.935 0.013 248); /* #E2E8F0 */
+  --sidebar-ring: oklch(0.602 0.124 192); /* #0D9488 */
+
+  /* Habit-Specific Colors - Teal & Trust Theme */
+  --habit-success: 180 70% 45%; /* Trust teal */
+  --habit-success-foreground: 180 25% 95%;
+  --habit-warning: 85 70% 55%; /* Golden yellow */
+  --habit-warning-foreground: 85 30% 15%;
+  --habit-error: 25 70% 50%; /* Warm red */
+  --habit-error-foreground: 25 20% 95%;
+  --habit-pending: 150 30% 60%; /* Soft green */
+  --habit-pending-foreground: 150 20% 20%;
+
+  /* Streak Colors - Achievement Theme */
+  --streak-bronze: 30 60% 45%;
+  --streak-silver: 200 20% 70%;
+  --streak-gold: 50 80% 60%;
+  --streak-master: 300 70% 55%;
+  --streak-legend: 180 60% 40%;
+}
+
+/* ============================================================================
+   DARK MODE THEME VARIABLES
+   ============================================================================ */
+
+.dark {
+  /* Dark Mode Colors - Teal HabitFlow Theme */
+  --background: oklch(0.203 0.028 257); /* #0F1419 */
+  --foreground: oklch(0.956 0.009 238); /* #F1F5F9 */
+  --card: oklch(0.247 0.033 257); /* #1A1F26 */
+  --card-foreground: oklch(0.956 0.009 238); /* #F1F5F9 */
+  --popover: oklch(0.247 0.033 257); /* #1A1F26 */
+  --popover-foreground: oklch(0.956 0.009 238); /* #F1F5F9 */
+  --primary: oklch(0.602 0.124 192); /* #0D9488 */
+  --primary-foreground: oklch(1.000 0.000 0); /* #ffffff */
+  --secondary: oklch(0.307 0.049 191); /* #1E3A3A */
+  --secondary-foreground: oklch(0.956 0.009 238); /* #F1F5F9 */
+  --muted: oklch(0.285 0.030 255); /* #262D35 */
+  --muted-foreground: oklch(0.700 0.040 236); /* #94A3B8 */
+  --accent: oklch(0.347 0.064 182); /* #134E4A */
+  --accent-foreground: oklch(0.956 0.009 238); /* #F1F5F9 */
+  --destructive: oklch(0.637 0.204 27); /* #EF4444 */
+  --destructive-foreground: oklch(0.956 0.009 238); /* #F1F5F9 */
+  --border: oklch(0.325 0.035 257); /* #2D3748 */
+  --input: oklch(0.247 0.033 257); /* #1A1F26 */
+  --ring: oklch(0.602 0.124 192); /* #0D9488 */
+
+  /* Dark Mode Chart Colors - Teal Progress Theme */
+  --chart-1: oklch(0.602 0.124 192); /* #0D9488 */
+  --chart-2: oklch(0.684 0.129 187); /* #14B8A6 */
+  --chart-3: oklch(0.764 0.118 182); /* #2DD4BF */
+  --chart-4: oklch(0.843 0.108 180); /* #5EEAD4 */
+  --chart-5: oklch(0.906 0.081 177); /* #99F6E4 */
+
+  /* Dark Mode Sidebar Colors */
+  --sidebar: oklch(0.247 0.033 257); /* #1A1F26 */
+  --sidebar-foreground: oklch(0.956 0.009 238); /* #F1F5F9 */
+  --sidebar-primary: oklch(0.602 0.124 192); /* #0D9488 */
+  --sidebar-primary-foreground: oklch(1.000 0.000 0); /* #ffffff */
+  --sidebar-accent: oklch(0.285 0.030 255); /* #262D35 */
+  --sidebar-accent-foreground: oklch(0.956 0.009 238); /* #F1F5F9 */
+  --sidebar-border: oklch(0.325 0.035 257); /* #2D3748 */
+  --sidebar-ring: oklch(0.602 0.124 192); /* #0D9488 */
+
+  /* Dark Mode Habit Colors */
+  --habit-success: 180 70% 55%;
+  --habit-success-foreground: 180 20% 10%;
+  --habit-warning: 85 70% 60%;
+  --habit-warning-foreground: 85 30% 10%;
+  --habit-error: 25 70% 55%;
+  --habit-error-foreground: 25 20% 95%;
+  --habit-pending: 150 40% 65%;
+  --habit-pending-foreground: 150 20% 15%;
+
+  /* Dark Mode Streak Colors */
+  --streak-bronze: 30 60% 55%;
+  --streak-silver: 200 30% 75%;
+  --streak-gold: 50 80% 70%;
+  --streak-master: 300 70% 65%;
+  --streak-legend: 180 60% 50%;
+}

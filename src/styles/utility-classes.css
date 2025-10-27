@@ -1,0 +1,91 @@
+/**
+ * Utility Classes
+ * 
+ * Contains habit-specific utility classes and custom component styles.
+ * This file is imported by the main index.css file.
+ */
+
+@layer utilities {
+  /* ============================================================================
+     HABIT COMPLETION STATES
+     ============================================================================ */
+
+  .habit-completed {
+    background-color: hsl(var(--habit-success));
+    color: hsl(var(--habit-success-foreground));
+    border-color: hsl(var(--habit-success));
+  }
+
+  .habit-partial {
+    background-color: hsl(var(--habit-warning));
+    color: hsl(var(--habit-warning-foreground));
+    border-color: hsl(var(--habit-warning));
+  }
+
+  .habit-missed {
+    background-color: hsl(var(--habit-error));
+    color: hsl(var(--habit-error-foreground));
+    border-color: hsl(var(--habit-error));
+  }
+
+  .habit-pending {
+    background-color: hsl(var(--habit-pending));
+    color: hsl(var(--habit-pending-foreground));
+    border-color: hsl(var(--habit-pending));
+  }
+
+  /* ============================================================================
+     STREAK LEVEL CLASSES
+     ============================================================================ */
+
+  .streak-bronze {
+    color: hsl(var(--streak-bronze));
+  }
+
+  .streak-silver {
+    color: hsl(var(--streak-silver));
+  }
+
+  .streak-gold {
+    color: hsl(var(--streak-gold));
+  }
+
+  .streak-master {
+    color: hsl(var(--streak-master));
+  }
+
+  .streak-legend {
+    color: hsl(var(--streak-legend));
+  }
+
+  /* ============================================================================
+     ANIMATION UTILITIES
+     ============================================================================ */
+
+  .animate-habit-complete {
+    animation: habitComplete 0.6s ease-out;
+  }
+
+  .animate-streak-glow {
+    animation: streakGlow 2s ease-in-out infinite;
+  }
+
+  .animate-progress-fill {
+    animation: progressFill 1s ease-out;
+  }
+
+  /* ============================================================================
+     CUSTOM SHADOWS
+     ============================================================================ */
+
+.shadow-soft {
+  box-shadow: 
+    0 2px 15px -3px rgba(13, 148, 136, 0.07),
+    0 10px 20px -2px rgba(13, 148, 136, 0.04);
+}
+
+.shadow-glow {
+  box-shadow: 0 0 20px rgba(13, 148, 136, 0.4);
+}
+
+}
