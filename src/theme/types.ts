@@ -37,4 +37,4 @@ export interface ThemeConfig {
   }
 }
 
-export type ColorMode = 'light' | 'dark' | 'system'
+export type ColorMode = 'light' | 'dark' 

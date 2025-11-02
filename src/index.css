@@ -21,7 +21,7 @@
 @custom-variant dark (&:is(.dark *));
 
   .navigation-link {
-    @apply inline-flex items-center justify-center whitespace-nowrap rounded-xl px-7 py-1 mx-0.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+    @apply inline-flex items-center justify-center whitespace-nowrap rounded-xl sm:px-6 px-4 py-1 mx-0.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
   }
 
 /* ============================================================================
