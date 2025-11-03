@@ -52,6 +52,7 @@ export interface UserProfile {
 export interface StoredData {
   habits: Habit[];
   userProfile: UserProfile | null;
+  habitCompletions?: HabitCompletion[];
   lastSync: string;
   version: string;
 }

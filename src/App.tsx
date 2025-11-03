@@ -1,10 +1,9 @@
 import "./App.css";
 import { ThemeProvider } from "@/theme/theme-provider";
-import { Home, Profile, Analytics } from "./_root/pages";
+import { Home, Profile, Analytics, History } from "./_root/pages";
 import { Route, Routes } from "react-router";
 import AuthLayout from "./_auth/AuthLayout";
 import RootLayout from "./_root/RootLayout";
-import History from "./_root/pages/History";
 import { Toaster } from "@/components/ui/sonner";
 import AuthForm from "./_auth/forms/AuthForm";
 

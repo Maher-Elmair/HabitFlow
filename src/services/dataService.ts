@@ -1,4 +1,4 @@
-import type { Habit, UserProfile, StoredData } from '@/types';
+import type { Habit, UserProfile, StoredData, HabitCompletion } from '@/types';
 
 class DataService {
   private readonly STORAGE_KEY = 'habitflow_data';
@@ -39,20 +39,20 @@ class DataService {
     }
   }
 
-  // 🔹 NEW: Get user profile
+  // 🔹 Get user profile
   async getUserProfile(): Promise<UserProfile | null> {
     const data = await this.getData();
     return data.userProfile;
   }
 
-  // 🔹 NEW: Save user profile
+  // 🔹 Save user profile
   async saveUserProfile(profile: UserProfile): Promise<void> {
     const data = await this.getData();
     data.userProfile = profile;
     await this.saveData(data);
   }
 
-  // 🔹 NEW: Update user profile
+  // 🔹 Update user profile
   async updateUserProfile(updates: Partial<UserProfile>): Promise<UserProfile> {
     const data = await this.getData();
     
@@ -70,30 +70,30 @@ class DataService {
     return updatedProfile;
   }
 
-// 🔹 NEW: Create user profile from Firebase auth
-async createUserProfileFromFirebase(firebaseUser: { uid: string; displayName?: string | null; email?: string | null; photoURL?: string | null }): Promise<UserProfile> {
-  const profile: UserProfile = {
-    id: firebaseUser.uid,
-    name: firebaseUser.displayName || 'User',
-    email: firebaseUser.email || '',
-    avatar: firebaseUser.photoURL || '',
-    bio: 'Building consistent habits, one day at a time.',
-    createdAt: new Date().toISOString(),
-    lastLogin: new Date().toISOString()
-  };
+  // 🔹 Create user profile from Firebase auth
+  async createUserProfileFromFirebase(firebaseUser: { uid: string; displayName?: string | null; email?: string | null; photoURL?: string | null }): Promise<UserProfile> {
+    const profile: UserProfile = {
+      id: firebaseUser.uid,
+      name: firebaseUser.displayName || 'User',
+      email: firebaseUser.email || '',
+      avatar: firebaseUser.photoURL || '',
+      bio: 'Building consistent habits, one day at a time.',
+      createdAt: new Date().toISOString(),
+      lastLogin: new Date().toISOString()
+    };
 
-  await this.saveUserProfile(profile);
-  return profile;
-}
+    await this.saveUserProfile(profile);
+    return profile;
+  }
 
-  // 🔹 NEW: Clear user profile (on logout)
+  // 🔹 Clear user profile (on logout)
   async clearUserProfile(): Promise<void> {
     const data = await this.getData();
     data.userProfile = null;
     await this.saveData(data);
   }
 
-  // Existing habit methods remain the same...
+  // Habit methods
   async getHabits(): Promise<Habit[]> {
     const data = await this.getData();
     return data.habits;
@@ -159,6 +159,73 @@ async createUserProfileFromFirebase(firebaseUser: { uid: string; displayName?: s
     }
   }
 
+  // 🔹 NEW: Get habit completions
+  async getHabitCompletions(habitId: string): Promise<HabitCompletion[]> {
+    const data = await this.getData();
+    return data.habitCompletions?.filter(c => c.habitId === habitId) || [];
+  }
+
+  // 🔹 NEW: Get all completions
+  async getAllCompletions(): Promise<HabitCompletion[]> {
+    const data = await this.getData();
+    return data.habitCompletions || [];
+  }
+
+  // 🔹 NEW: Add habit completion
+  async addHabitCompletion(completion: HabitCompletion): Promise<void> {
+    const data = await this.getData();
+    if (!data.habitCompletions) {
+      data.habitCompletions = [];
+    }
+    
+    // Remove existing completion for the same habit and date
+    data.habitCompletions = data.habitCompletions.filter(
+      c => !(c.habitId === completion.habitId && c.date === completion.date)
+    );
+    
+    data.habitCompletions.push(completion);
+    await this.saveData(data);
+  }
+
+  // 🔹 NEW: Update habit completion
+  async updateHabitCompletion(habitId: string, date: string, completed: boolean): Promise<void> {
+    const data = await this.getData();
+    if (!data.habitCompletions) {
+      data.habitCompletions = [];
+    }
+    
+    const completionIndex = data.habitCompletions.findIndex(
+      c => c.habitId === habitId && c.date === date
+    );
+    
+    if (completionIndex !== -1) {
+      data.habitCompletions[completionIndex].completed = completed;
+      await this.saveData(data);
+    } else {
+      await this.addHabitCompletion({ habitId, date, completed });
+    }
+  }
+
+  // 🔹 NEW: Delete habit completion
+  async deleteHabitCompletion(habitId: string, date: string): Promise<void> {
+    const data = await this.getData();
+    if (!data.habitCompletions) {
+      return;
+    }
+    
+    data.habitCompletions = data.habitCompletions.filter(
+      c => !(c.habitId === habitId && c.date === date)
+    );
+    
+    await this.saveData(data);
+  }
+
+  // 🔹 NEW: Get completions for a specific date
+  async getCompletionsForDate(date: string): Promise<HabitCompletion[]> {
+    const data = await this.getData();
+    return data.habitCompletions?.filter(c => c.date === date) || [];
+  }
+
   // Export/Import methods
   async exportData(): Promise<string> {
     const data = await this.getData();
@@ -188,7 +255,8 @@ async createUserProfileFromFirebase(firebaseUser: { uid: string; displayName?: s
   private getDefaultData(): StoredData {
     return {
       habits: this.getDefaultHabits(),
-      userProfile: null, // No user profile by default
+      userProfile: null,
+      habitCompletions: this.getDefaultCompletions(),
       lastSync: new Date().toISOString(),
       version: this.DATA_VERSION
     };
@@ -277,6 +345,62 @@ async createUserProfileFromFirebase(firebaseUser: { uid: string; displayName?: s
     ];
   }
 
+  private getDefaultCompletions(): HabitCompletion[] {
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const twoDaysAgo = new Date(today);
+    twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+    
+    return [
+      // Today's completions
+      {
+        habitId: "2",
+        date: this.formatDateForCompletion(today),
+        completed: true
+      },
+      {
+        habitId: "4",
+        date: this.formatDateForCompletion(today),
+        completed: true
+      },
+      // Yesterday's completions
+      {
+        habitId: "2",
+        date: this.formatDateForCompletion(yesterday),
+        completed: true
+      },
+      {
+        habitId: "4",
+        date: this.formatDateForCompletion(yesterday),
+        completed: true
+      },
+      {
+        habitId: "5",
+        date: this.formatDateForCompletion(yesterday),
+        completed: true
+      },
+      // Two days ago completions
+      {
+        habitId: "2",
+        date: this.formatDateForCompletion(twoDaysAgo),
+        completed: true
+      },
+      {
+        habitId: "4",
+        date: this.formatDateForCompletion(twoDaysAgo),
+        completed: true
+      }
+    ];
+  }
+
+  private formatDateForCompletion(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
   private validateData(data: unknown): data is StoredData {
     return (
       typeof data === 'object' &&
@@ -286,7 +410,9 @@ async createUserProfileFromFirebase(firebaseUser: { uid: string; displayName?: s
       'lastSync' in data &&
       'version' in data &&
       Array.isArray((data as StoredData).habits) &&
-      (data as StoredData).userProfile === null || typeof (data as StoredData).userProfile === 'object'
+      ((data as StoredData).userProfile === null || typeof (data as StoredData).userProfile === 'object') &&
+      // Add validation for habitCompletions (optional field)
+      (!('habitCompletions' in data) || Array.isArray((data as StoredData).habitCompletions))
     );
   }
 }
