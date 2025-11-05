@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -31,8 +31,17 @@ export function HabitCard({
     habit.completed,
   );
 
-  const handleToggle = (): void => {
-    setIsCompleted(!isCompleted);
+  // Sync with habit.completed when it changes
+  useEffect(() => {
+    setIsCompleted(habit.completed);
+  }, [habit.completed]);
+
+  const handleToggle = (event: React.MouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const newCompleted = !isCompleted;
+    setIsCompleted(newCompleted);
     onToggle(habit.id);
   };
 
@@ -210,11 +219,17 @@ export function HabitCard({
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <Switch
-              checked={isCompleted}
-              onCheckedChange={handleToggle}
-              className="data-[state=checked]:bg-primary scale-90 sm:scale-100"
-            />
+            {/* FIX: Wrap Switch in a div with event handlers */}
+            <div 
+              onClick={handleToggle}
+              className="cursor-pointer"
+            >
+              <Switch
+                checked={isCompleted}
+                onCheckedChange={() => {}} // Empty function since we handle click manually
+                className="data-[state=checked]:bg-primary scale-90 sm:scale-100"
+              />
+            </div>
           </div>
         </div>
       </div>

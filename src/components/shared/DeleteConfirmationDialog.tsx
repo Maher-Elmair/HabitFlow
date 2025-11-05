@@ -7,7 +7,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Trash2 } from "lucide-react";
 
 interface DeleteConfirmationDialogProps {
   isOpen: boolean;
@@ -15,6 +15,9 @@ interface DeleteConfirmationDialogProps {
   onConfirm: () => void;
   habitName?: string;
   isLoading?: boolean;
+  title?: string;
+  description?: string | React.ReactNode; // Allow both string and JSX
+  confirmButtonText?: string;
 }
 
 export function DeleteConfirmationDialog({
@@ -23,11 +26,31 @@ export function DeleteConfirmationDialog({
   onConfirm,
   habitName,
   isLoading = false,
+  title,
+  description,
+  confirmButtonText,
 }: DeleteConfirmationDialogProps): React.JSX.Element {
   const handleConfirm = () => {
     onConfirm();
     onClose();
   };
+
+  // Default values for single habit deletion
+  const dialogTitle = title || "Delete Habit";
+  
+  // For single habit deletion, show habit name prominently
+  // For bulk deletion, use the provided description
+  const dialogDescription = description || (
+    <>
+      Are you sure you want to delete{" "}
+      <span className="font-medium text-foreground bg-muted/50 px-2 py-1 rounded-md  ">
+        {habitName || "this habit"}
+      </span>
+      ? This will permanently remove the habit and all its tracking data. This action cannot be undone.
+    </>
+  );
+
+  const buttonText = confirmButtonText || (isLoading ? "Deleting..." : "Delete");
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -37,14 +60,10 @@ export function DeleteConfirmationDialog({
             <div className="p-2 rounded-full bg-destructive/10">
               <AlertTriangle className="w-5 h-5 text-destructive" />
             </div>
-            <DialogTitle>Delete Habit</DialogTitle>
+            <DialogTitle>{dialogTitle}</DialogTitle>
           </div>
-          <DialogDescription className="pt-4">
-            Are you sure you want to delete{" "}
-            <span className="font-medium text-foreground">
-              {habitName || "this habit"}
-            </span>
-            ? This will permanently remove the habit and all its tracking data. This action cannot be undone.
+          <DialogDescription className="pt-4 text-base">
+            {dialogDescription}
           </DialogDescription>
         </DialogHeader>
         
@@ -61,9 +80,10 @@ export function DeleteConfirmationDialog({
             variant="destructive"
             onClick={handleConfirm}
             disabled={isLoading}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto flex items-center gap-2"
           >
-            {isLoading ? "Deleting..." : "Delete"}
+            <Trash2 className="w-4 h-4" />
+            {buttonText}
           </Button>
         </DialogFooter>
       </DialogContent>

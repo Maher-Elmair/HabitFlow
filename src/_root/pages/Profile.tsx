@@ -8,15 +8,24 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOutIcon, Pencil, Calendar } from "lucide-react";
+import { LogOutIcon, Pencil, Calendar, Plus, MoreVertical, Edit, Trash2, Trash } from "lucide-react";
 
 import EditProfileModal from "@/components/shared/EditProfile";
 import { LogoutConfirmationDialog } from "@/components/shared/LogoutConfirmationDialog";
+import { AddEditHabit } from "@/components/shared/addEditHabit";
+import { DeleteConfirmationDialog } from "@/components/shared/DeleteConfirmationDialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { UserProfile, Habit } from "@/types";
 import { dataService } from "@/services/dataService";
 
 interface ProfileContext {
   habits: Habit[];
+  setHabits: React.Dispatch<React.SetStateAction<Habit[]>>;
 }
 
 const Profile = () => {
@@ -26,8 +35,19 @@ const Profile = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Habit management states
+  const [isHabitModalOpen, setIsHabitModalOpen] = useState(false);
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [habitToDelete, setHabitToDelete] = useState<Habit | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Delete all habits states
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
+
   const navigate = useNavigate();
-  const { habits } = useOutletContext<ProfileContext>();
+  const { habits, setHabits } = useOutletContext<ProfileContext>();
 
   // Listen for Firebase authentication state changes
   useEffect(() => {
@@ -89,7 +109,7 @@ const Profile = () => {
     setIsLogoutDialogOpen(true);
   };
 
-  // Handle saving updated profile info - with localStorage saving
+  // Handle saving updated profile info
   const handleSaveProfile = async (updatedProfile: Partial<UserProfile>) => {
     if (!profile) return;
     
@@ -108,6 +128,136 @@ const Profile = () => {
         return { ...prev, ...updatedProfile };
       });
       toast.success("Profile updated (local only)!");
+    }
+  };
+
+  // Handle habit edit
+  const handleEditHabit = (habit: Habit) => {
+    setEditingHabit(habit);
+    setIsHabitModalOpen(true);
+  };
+
+  // Handle habit deletion request
+  const handleDeleteHabit = (habit: Habit) => {
+    setHabitToDelete(habit);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle actual habit deletion
+  const handleConfirmDelete = async () => {
+    if (!habitToDelete) return;
+
+    setIsDeleting(true);
+    
+    try {
+      await dataService.deleteHabit(habitToDelete.id);
+      
+      const deletedHabitName = habitToDelete.name;
+      setHabits(prevHabits => prevHabits.filter(habit => habit.id !== habitToDelete.id));
+      
+      toast.success("Habit deleted successfully!", {
+        description: `"${deletedHabitName}" has been removed from your habits.`,
+        duration: 3000,
+      });
+      
+      setDeleteDialogOpen(false);
+      setHabitToDelete(null);
+    } catch (error) {
+      console.error("Error deleting habit:", error);
+      toast.error("Failed to delete habit", {
+        description: "There was an error deleting your habit. Please try again.",
+        duration: 3000,
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Handle adding new habit
+  const handleAddHabit = () => {
+    setEditingHabit(null);
+    setIsHabitModalOpen(true);
+  };
+
+  // Handle saving habit
+  const handleSaveHabit = async (habitData: Partial<Habit>) => {
+    try {
+      if (editingHabit) {
+        // Update existing habit
+        await dataService.updateHabit(editingHabit.id, habitData);
+        
+        setHabits(prevHabits => 
+          prevHabits.map(habit => 
+            habit.id === editingHabit.id 
+              ? { ...habit, ...habitData }
+              : habit
+          )
+        );
+      } else {
+        // Create new habit
+        const newHabit: Habit = {
+          id: Date.now().toString(),
+          name: habitData.name || '',
+          description: habitData.description,
+          category: habitData.category,
+          image: habitData.image,
+          color: habitData.color || '#0D9488',
+          frequencyType: habitData.frequencyType || 'Daily',
+          targetCount: habitData.targetCount || 1,
+          startDate: habitData.startDate || new Date().toISOString().split('T')[0],
+          endDate: habitData.endDate,
+          priorityLevel: habitData.priorityLevel || 'Medium',
+          reminderTime: habitData.reminderTime,
+          completed: false,
+          streak: 0,
+          current: 0,
+        };
+        
+        await dataService.addHabit(newHabit);
+        setHabits(prevHabits => [...prevHabits, newHabit]);
+      }
+    } catch (error) {
+      console.error('Error saving habit:', error);
+      toast.error("Failed to save habit");
+    }
+  };
+
+  // Handle delete all habits confirmation
+  const handleOpenDeleteAllDialog = () => {
+    if (habits.length === 0) {
+      toast.info("You don't have any habits to delete.");
+      return;
+    }
+    setDeleteAllDialogOpen(true);
+  };
+
+  // Handle actual deletion of all habits
+  const handleConfirmDeleteAll = async () => {
+    setIsDeletingAll(true);
+    
+    try {
+      // Delete all habits one by one
+      for (const habit of habits) {
+        await dataService.deleteHabit(habit.id);
+      }
+      
+      // Clear the habits list
+      setHabits([]);
+      
+      toast.success("All habits deleted successfully!", {
+        description: `All ${habits.length} habits have been removed.`,
+        duration: 4000,
+      });
+      
+      setDeleteAllDialogOpen(false);
+    } catch (error) {
+      console.error("Error deleting all habits:", error);
+      toast.error("Failed to delete all habits", {
+        description: "There was an error deleting your habits. Please try again.",
+        duration: 3000,
+      });
+    } finally {
+      setIsDeletingAll(false);
     }
   };
 
@@ -132,8 +282,8 @@ const Profile = () => {
 
   return (
     <div className="w-full">
-      {/* Page Header */}
-      <div className="text-center">
+      {/* Header */}
+      <div className="text-center pt-6">
         <h2 className="text-2xl font-medium">My Profile</h2>
         <p className="text-md text-muted-foreground pt-2 pb-4">
           Manage your personal information and view your habits
@@ -179,11 +329,39 @@ const Profile = () => {
 
       {/* Current Habits Section */}
       <Card className="p-6 mt-6 bg-card border-border rounded-2xl">
-        <div className="mb-5">
-          <h3 className="mb-1">My Habits</h3>
-          <p className="text-sm text-muted-foreground">
-            All your active habits and their current status
-          </p>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3>My Habits</h3>
+              <span className="bg-primary/10 text-primary text-sm px-2 py-1 rounded-full font-medium">
+                {habits.length}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {habits.length === 0 
+                ? "No habits yet. Start building your routine!" 
+                : "All your active habits and their current status"
+              }
+            </p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button
+              onClick={handleAddHabit}
+              className="bg-primary text-primary-foreground hover:bg-primary/90 hover:cursor-pointer rounded-xl shadow-sm w-full sm:w-auto flex items-center justify-center"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Add Habit
+            </Button>
+            <Button
+              onClick={handleOpenDeleteAllDialog}
+              variant="outline"
+              className="text-destructive border-destructive/20 hover:bg-destructive/10 hover:cursor-pointer rounded-xl w-full sm:w-auto flex items-center justify-center"
+              disabled={habits.length === 0}
+            >
+              <Trash className="w-4 h-4 mr-2" />
+              Delete All
+            </Button>
+          </div>
         </div>
 
         {!habits || habits.length === 0 ? (
@@ -191,9 +369,16 @@ const Profile = () => {
             <div className="w-16 h-16 rounded-full bg-linear-to-br from-primary/20 to-primary/10 flex items-center justify-center mx-auto mb-4">
               <span className="text-3xl">📝</span>
             </div>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-4">
               No habits yet. Start tracking your first habit!
             </p>
+            <Button
+              onClick={handleAddHabit}
+              className="bg-primary text-primary-foreground cursor-pointer hover:bg-primary/90 rounded-xl"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Your First Habit
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">
@@ -240,7 +425,8 @@ const Profile = () => {
 
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
                   <div className="flex items-center gap-2">
-                    {habit.streak && habit.streak > 0 && (
+                    {/* Only show streak if greater than 0 */}
+                    {(habit.streak && habit.streak > 0) ? (
                       <span
                         className="text-xs px-2.5 py-1 rounded-full whitespace-nowrap"
                         style={{
@@ -250,7 +436,7 @@ const Profile = () => {
                       >
                         🔥 {habit.streak}d
                       </span>
-                    )}
+                    ) : null}
                     {habit.category && (
                       <span className="text-xs px-2.5 py-1 bg-accent/50 text-accent-foreground rounded-full whitespace-nowrap">
                         {habit.category}
@@ -277,6 +463,35 @@ const Profile = () => {
                       {habit.frequencyType}
                     </span>
                   </div>
+
+                  {/* Three dots menu for edit/delete actions */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-lg"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="rounded-xl">
+                      <DropdownMenuItem
+                        onClick={() => handleEditHabit(habit)}
+                        className="rounded-lg cursor-pointer"
+                      >
+                        <Edit className="mr-2 h-4 w-4" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => handleDeleteHabit(habit)}
+                        className="text-destructive rounded-lg cursor-pointer"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ))}
@@ -310,6 +525,48 @@ const Profile = () => {
         onClose={() => setIsModalOpen(false)}
         onSave={handleSaveProfile}
         profile={profile}
+      />
+
+      {/* Add/Edit Habit Modal */}
+      <AddEditHabit
+        isOpen={isHabitModalOpen}
+        onClose={() => {
+          setIsHabitModalOpen(false);
+          setEditingHabit(null);
+        }}
+        onSave={handleSaveHabit}
+        habit={editingHabit}
+      />
+
+      {/* Delete Single Habit Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={deleteDialogOpen}
+        onClose={() => {
+          setDeleteDialogOpen(false);
+          setHabitToDelete(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        habitName={habitToDelete?.name}
+        isLoading={isDeleting}
+      />
+
+      {/* Delete All Habits Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={deleteAllDialogOpen}
+        onClose={() => setDeleteAllDialogOpen(false)}
+        onConfirm={handleConfirmDeleteAll}
+        title="Delete All Habits"
+        description={
+          <>
+            Are you sure you want to delete all{" "}
+            <span className="font-medium text-foreground bg-muted/50 px-2 py-1 rounded-md">
+              {habits.length} habits
+            </span>
+            ? This action will permanently remove all your habits and cannot be undone.
+          </>
+        }
+        confirmButtonText={isDeletingAll ? "Deleting All..." : "Delete All"}
+        isLoading={isDeletingAll}
       />
 
       {/* Logout Confirmation Dialog */}

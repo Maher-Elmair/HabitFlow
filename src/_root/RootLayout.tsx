@@ -1,3 +1,4 @@
+// RootLayout.tsx
 import { useState, useEffect } from "react";
 import { Navigate, Outlet, NavLink } from "react-router";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
@@ -6,6 +7,13 @@ import Topbar from "@/components/shared/Topbar";
 import Bottombar from "@/components/shared/Bottombar";
 import type { Habit } from "@/types";
 import { dataService } from "@/services/dataService";
+
+// Define the context type for better TypeScript support
+export interface RootLayoutContext {
+  habits: Habit[];
+  setHabits: (habits: Habit[] | ((prev: Habit[]) => Habit[])) => void;
+  isLoading: boolean;
+}
 
 const ProtectedRootLayout = () => {
   const { isAuthenticated } = useAuthStatus();
@@ -29,6 +37,8 @@ const ProtectedRootLayout = () => {
 
     if (isAuthenticated) {
       loadHabits();
+    } else {
+      setLoading(false);
     }
   }, [isAuthenticated]);
 
@@ -141,7 +151,7 @@ const ProtectedRootLayout = () => {
 
           {/* Page Content */}
           <div className="w-full sm:w-[90%] text-start p-6 m-auto">
-            <Outlet context={{ habits, setHabits: updateHabits }} />
+            <Outlet context={{ habits, setHabits: updateHabits, isLoading: loading }} />
           </div>
         </div>
       </main>

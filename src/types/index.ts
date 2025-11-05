@@ -15,13 +15,13 @@ export interface Habit {
   color?: string;
   frequencyType?: FrequencyType;
   targetCount?: number;
-  startDate?: string;
-  endDate?: string;
+  startDate: string; // Required field - YYYY-MM-DD format
+  endDate?: string; // Optional field - YYYY-MM-DD format
   priorityLevel?: PriorityLevel;
   reminderTime?: string;
-  completed?: boolean; // Add as optional
-  streak?: number; // Add as optional
-  current?: number; // Add as optional for progress tracking
+  completed?: boolean;
+  streak?: number;
+  current?: number;
   createdAt?: string;
 }
 
