@@ -271,11 +271,22 @@ class DataService {
   }
 
   /**
+   * Get habit completions by habit ID
+   * Returns all completion records for a specific habit
+   */
+  async getHabitCompletionsByHabitId(habitId: string): Promise<HabitCompletion[]> {
+    const data = await this.getData();
+    return data.habitCompletions?.filter(c => c.habitId === habitId) || [];
+  }
+
+  /**
    * Update completion status for a specific habit and date
    * Creates new record if none exists, otherwise updates existing
    */
   async updateHabitCompletion(habitId: string, date: string, completed: boolean): Promise<void> {
     const data = await this.getData();
+    
+    // Initialize habitCompletions array if it doesn't exist
     if (!data.habitCompletions) {
       data.habitCompletions = [];
     }
@@ -285,12 +296,14 @@ class DataService {
     );
     
     if (completionIndex !== -1) {
+      // Update existing completion
       data.habitCompletions[completionIndex].completed = completed;
       data.habitCompletions[completionIndex].completedAt = completed ? new Date().toISOString() : undefined;
     } else {
-      await this.addHabitCompletion({ 
-        habitId, 
-        date, 
+      // Create new completion
+      data.habitCompletions.push({
+        habitId,
+        date,
         completed,
         completedAt: completed ? new Date().toISOString() : undefined
       });
@@ -308,6 +321,8 @@ class DataService {
    */
   async addHabitCompletion(completion: HabitCompletion): Promise<void> {
     const data = await this.getData();
+    
+    // Initialize habitCompletions array if it doesn't exist
     if (!data.habitCompletions) {
       data.habitCompletions = [];
     }
@@ -317,6 +332,7 @@ class DataService {
       c => !(c.habitId === completion.habitId && c.date === completion.date)
     );
     
+    // Add new completion
     data.habitCompletions.push(completion);
     await this.saveData(data);
     
@@ -462,7 +478,6 @@ class DataService {
     const startOfCurrentMonth = this.formatDate(new Date(currentYear, currentMonth, 1));
     const endOfCurrentMonth = this.formatDate(new Date(currentYear, currentMonth + 1, 0));
     const startOfLastMonth = this.formatDate(new Date(currentYear, currentMonth - 1, 1));
-    // const endOfLastMonth = this.formatDate(new Date(currentYear, currentMonth, 0));
     const startOfNextMonth = this.formatDate(new Date(currentYear, currentMonth + 1, 1));
     const endOfNextMonth = this.formatDate(new Date(currentYear, currentMonth + 2, 0));
 

@@ -12,6 +12,7 @@ import { dataService } from "@/services/dataService";
 import type { HabitWithCompletion, Habit, HabitCompletion } from "@/types";
 import { AddEditHabit } from "@/components/shared/addEditHabit";
 import { DeleteConfirmationDialog } from "@/components/shared/DeleteConfirmationDialog";
+import { toast } from "sonner";
 
 // Define the context type
 interface HistoryContext {
@@ -45,9 +46,10 @@ export function History(): React.JSX.Element {
       try {
         setLoading(true);
         const allCompletions = await dataService.getAllCompletions();
-        setCompletions(allCompletions);
+        setCompletions(allCompletions || []);
       } catch (error) {
         console.error("Error loading completions:", error);
+        toast.error("Failed to load habit completions");
       } finally {
         setLoading(false);
       }
@@ -77,15 +79,19 @@ export function History(): React.JSX.Element {
     }
   }
 
-  // Calculate streak for a habit up to a specific date
+  // Calculate streak for a habit up to a specific date - IMPROVED VERSION
   function calculateStreak(habitId: string, upToDate: string): number {
     let streak = 0;
     const dateObj = new Date(upToDate + "T00:00:00");
 
+    // Check consecutive days starting from the target date backwards
     for (let i = 0; i < 365; i++) {
-      const checkDate = formatDate(new Date(dateObj.getTime() - i * 86400000));
+      const checkDate = new Date(dateObj);
+      checkDate.setDate(checkDate.getDate() - i);
+      const checkDateStr = formatDate(checkDate);
+      
       const completion = completions.find(
-        (c) => c.habitId === habitId && c.date === checkDate
+        (c) => c.habitId === habitId && c.date === checkDateStr
       );
 
       if (completion?.completed) {
@@ -193,49 +199,45 @@ export function History(): React.JSX.Element {
     }
   };
 
-  // Handle habit toggle - OPTIMIZED: remove forced reload to prevent re-renders
+  // Handle habit toggle - UPDATED: Use toggleHabitCompletionForDate for consistency
   const handleToggleHabit = async (
     habitId: string,
     date: string
   ): Promise<void> => {
     try {
-      const habit = habits.find((h) => h.id === habitId);
-      if (!habit) return;
+      console.log(`Toggling habit ${habitId} for date ${date}`);
 
-      const completion = completions.find(
-        (c) => c.habitId === habitId && c.date === date
-      );
+      // Use the data service to toggle completion
+      const updatedCompletion = await dataService.toggleHabitCompletionForDate(habitId, date);
 
-      const newCompleted = !completion?.completed;
-
-      console.log(`Toggling habit ${habitId} for date ${date} to ${newCompleted}`);
-
-      // Update completion in data service
-      await dataService.updateHabitCompletion(habitId, date, newCompleted);
-
-      // Update local completions state immediately for better UX
-      setCompletions((prev) => {
+      // Update local completions state
+      setCompletions(prev => {
         const existingIndex = prev.findIndex(
-          (c) => c.habitId === habitId && c.date === date
+          c => c.habitId === habitId && c.date === date
         );
-
+        
         if (existingIndex !== -1) {
-          const updated = [...prev];
-          updated[existingIndex] = {
-            ...updated[existingIndex],
-            completed: newCompleted,
-          };
-          return updated;
+          const newCompletions = [...prev];
+          newCompletions[existingIndex] = updatedCompletion;
+          return newCompletions;
         } else {
-          return [...prev, { habitId, date, completed: newCompleted }];
+          return [...prev, updatedCompletion];
         }
       });
 
-      // Remove forced reload to prevent unnecessary re-renders
-      // The local state update is sufficient for immediate UI feedback
+      // Update habits to reflect streak changes
+      const updatedHabits = await dataService.getHabits();
+      setHabits(updatedHabits);
+
+      toast.success(
+        updatedCompletion.completed 
+          ? "Habit marked as completed!" 
+          : "Habit marked as incomplete"
+      );
 
     } catch (error) {
       console.error("Error toggling habit completion:", error);
+      toast.error("Failed to update habit");
     }
   };
 
@@ -263,14 +265,30 @@ export function History(): React.JSX.Element {
     try {
       await dataService.deleteHabit(habitToDelete.id);
 
+      const deletedHabitName = habitToDelete.name;
+      
       setHabits((prevHabits) =>
         prevHabits.filter((habit) => habit.id !== habitToDelete.id)
       );
+
+      // Also remove related completions from local state
+      setCompletions(prev => 
+        prev.filter(c => c.habitId !== habitToDelete.id)
+      );
+
+      toast.success("Habit deleted successfully!", {
+        description: `"${deletedHabitName}" has been removed from your habits.`,
+        duration: 3000,
+      });
 
       setDeleteDialogOpen(false);
       setHabitToDelete(null);
     } catch (error) {
       console.error("Error deleting habit:", error);
+      toast.error("Failed to delete habit", {
+        description: "There was an error deleting your habit. Please try again.",
+        duration: 3000,
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -288,6 +306,8 @@ export function History(): React.JSX.Element {
             habit.id === editingHabit.id ? { ...habit, ...habitData } : habit
           )
         );
+        
+        toast.success("Habit updated successfully!");
       } else {
         // Create new habit - use dataService's formatDate method
         const newHabit: Habit = {
@@ -314,10 +334,15 @@ export function History(): React.JSX.Element {
         // Update habits state only, no need to reload completions
         const updatedHabits = await dataService.getHabits();
         setHabits(updatedHabits);
+        
+        toast.success("Habit created successfully!");
       }
       
+      setIsModalOpen(false);
+      setEditingHabit(null);
     } catch (error) {
       console.error('Error saving habit:', error);
+      toast.error("Failed to save habit");
     }
   };
 

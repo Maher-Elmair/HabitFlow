@@ -46,13 +46,13 @@ const Home = () => {
     return `${year}-${month}-${day}`;
   };
 
-  // Load completions for all habits
+  // Load completions for all habits - FIXED VERSION
   useEffect(() => {
     const loadCompletions = async () => {
       try {
         setLoading(true);
         const allCompletions = await dataService.getAllCompletions();
-        setCompletions(allCompletions);
+        setCompletions(allCompletions || []);
       } catch (error) {
         console.error("Error loading completions:", error);
         toast.error("Failed to load habit completions");
@@ -64,7 +64,7 @@ const Home = () => {
     loadCompletions();
   }, []);
 
-  // Get habits with completion for a specific date - LIKE HISTORY
+  // Get habits with completion for a specific date - OPTIMIZED VERSION
   const getHabitsForDate = useCallback(
     (dateStr: string): HabitWithCompletion[] => {
       const selectedDateObj = new Date(dateStr + "T00:00:00");
@@ -121,15 +121,19 @@ const Home = () => {
     [habits, completions]
   );
 
-  // Calculate streak for a habit up to a specific date - LIKE HISTORY
+  // Calculate streak for a habit up to a specific date - FIXED VERSION
   const calculateStreak = (habitId: string, upToDate: string): number => {
     let streak = 0;
     const dateObj = new Date(upToDate + "T00:00:00");
 
+    // Check consecutive days starting from the target date backwards
     for (let i = 0; i < 365; i++) {
-      const checkDate = formatDate(new Date(dateObj.getTime() - i * 86400000));
+      const checkDate = new Date(dateObj);
+      checkDate.setDate(checkDate.getDate() - i);
+      const checkDateStr = formatDate(checkDate);
+      
       const completion = completions.find(
-        (c) => c.habitId === habitId && c.date === checkDate
+        (c) => c.habitId === habitId && c.date === checkDateStr
       );
 
       if (completion?.completed) {
@@ -167,57 +171,48 @@ const Home = () => {
     setSelectedDate(new Date());
   };
 
-  // Handle habit toggle - UPDATED: like History page
+  // Handle habit toggle - IMPROVED VERSION
   const handleToggleHabit = useCallback(
     async (id: string) => {
       try {
         const dateStr = formatDate(selectedDate);
-        const habit = habits.find((h) => h.id === id);
-        if (!habit) return;
+        
+        console.log(`Toggling habit ${id} for date ${dateStr}`);
 
-        const completion = completions.find(
-          (c) => c.habitId === id && c.date === dateStr
-        );
+        // Use the data service to toggle completion
+        const updatedCompletion = await dataService.toggleHabitCompletionForDate(id, dateStr);
 
-        const newCompleted = !completion?.completed;
-
-        console.log(
-          `Toggling habit ${id} for date ${dateStr} to ${newCompleted}`
-        );
-
-        // Update completion in data service
-        await dataService.updateHabitCompletion(id, dateStr, newCompleted);
-
-        // Update local completions state immediately for better UX
-        setCompletions((prev) => {
+        // Update local completions state
+        setCompletions(prev => {
           const existingIndex = prev.findIndex(
-            (c) => c.habitId === id && c.date === dateStr
+            c => c.habitId === id && c.date === dateStr
           );
-
+          
           if (existingIndex !== -1) {
-            const updated = [...prev];
-            updated[existingIndex] = {
-              ...updated[existingIndex],
-              completed: newCompleted,
-            };
-            return updated;
+            const newCompletions = [...prev];
+            newCompletions[existingIndex] = updatedCompletion;
+            return newCompletions;
           } else {
-            return [
-              ...prev,
-              { habitId: id, date: dateStr, completed: newCompleted },
-            ];
+            return [...prev, updatedCompletion];
           }
         });
 
-        // Also update the habits list to reflect streak changes
+        // Update habits to reflect streak changes
         const updatedHabits = await dataService.getHabits();
         setHabits(updatedHabits);
+
+        toast.success(
+          updatedCompletion.completed 
+            ? "Habit marked as completed!" 
+            : "Habit marked as incomplete"
+        );
+
       } catch (error) {
         console.error("Error toggling habit:", error);
         toast.error("Failed to update habit");
       }
     },
-    [selectedDate, habits, completions, setHabits]
+    [selectedDate, setHabits]
   );
 
   // Handle habit edit
@@ -244,6 +239,11 @@ const Home = () => {
       const deletedHabitName = habitToDelete.name;
       setHabits((prevHabits) =>
         prevHabits.filter((habit) => habit.id !== habitToDelete.id)
+      );
+
+      // Also remove related completions from local state
+      setCompletions(prev => 
+        prev.filter(c => c.habitId !== habitToDelete.id)
       );
 
       toast.success("Habit deleted successfully!", {
@@ -283,6 +283,8 @@ const Home = () => {
             habit.id === editingHabit.id ? { ...habit, ...habitData } : habit
           )
         );
+        
+        toast.success("Habit updated successfully!");
       } else {
         // Create new habit
         const newHabit: Habit = {
@@ -306,7 +308,12 @@ const Home = () => {
 
         await dataService.addHabit(newHabit);
         setHabits((prevHabits) => [...prevHabits, newHabit]);
+        
+        toast.success("Habit created successfully!");
       }
+      
+      setIsModalOpen(false);
+      setEditingHabit(null);
     } catch (error) {
       console.error("Error saving habit:", error);
       toast.error("Failed to save habit");
@@ -469,7 +476,7 @@ const Home = () => {
         </Button>
       </div>
 
-      {/* Habits List - UPDATED: No event prevention needed */}
+      {/* Habits List */}
       {todayHabits.length === 0 ? (
         <Card className="p-12 mt-2 text-center bg-card border-border rounded-2xl">
           <div className="max-w-md mx-auto">
