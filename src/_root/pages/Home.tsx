@@ -16,6 +16,7 @@ import { AddEditHabit } from "@/components/shared/addEditHabit";
 import { DeleteConfirmationDialog } from "@/components/shared/DeleteConfirmationDialog";
 import { toast } from "sonner";
 import { dataService } from "@/services/dataService";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
 interface HomeContext {
   habits: Habit[];
@@ -342,12 +343,7 @@ const Home = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center p-12">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <span className="ml-3 text-muted-foreground">Loading habits...</span>
-      </div>
-    );
+    return <LoadingSpinner message="Loading habits..." />;
   }
 
   return (

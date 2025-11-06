@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { UserProfile, Habit } from "@/types";
 import { dataService } from "@/services/dataService";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
 interface ProfileContext {
   habits: Habit[];
@@ -262,12 +263,7 @@ const Profile = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="ml-3 text-muted-foreground">Loading profile...</span>
-      </div>
-    );
+    return <LoadingSpinner message="Loading profile..." />;
   }
 
   if (!user || !profile) {

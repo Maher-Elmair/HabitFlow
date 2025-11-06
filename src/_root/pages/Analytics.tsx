@@ -12,6 +12,7 @@ import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieC
 import type { Habit, HabitCompletion } from "@/types";
 import { dataService } from "@/services/dataService";
 import { useEffect, useState } from "react";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
 interface OutletContext {
   habits: Habit[];
@@ -27,6 +28,7 @@ const Analytics = () => {
   useEffect(() => {
     const loadCompletions = async () => {
       try {
+        setLoading(true);
         const allCompletions = await dataService.getAllCompletions();
         setCompletions(allCompletions || []);
       } catch (error) {
@@ -472,12 +474,7 @@ const Analytics = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="ml-3 text-muted-foreground">Loading habits analytics...</span>
-      </div>
-    );
+    return <LoadingSpinner message="Loading habits analytics..." />;
   }
 
   return (

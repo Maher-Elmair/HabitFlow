@@ -1,12 +1,12 @@
-// RootLayout.tsx
 import { useState, useEffect } from "react";
-import { Navigate, Outlet, NavLink } from "react-router";
+import { Navigate, Outlet } from "react-router";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
-import { LayoutDashboard, User, BarChart3, HistoryIcon } from "lucide-react";
 import Topbar from "@/components/shared/Topbar";
 import Bottombar from "@/components/shared/Bottombar";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 import type { Habit } from "@/types";
 import { dataService } from "@/services/dataService";
+import NavigationLinks from "@/components/shared/NavigationLinks";
 
 // Define the context type for better TypeScript support
 export interface RootLayoutContext {
@@ -68,14 +68,7 @@ const ProtectedRootLayout = () => {
 
   // Show loading state while checking authentication or loading data
   if (isAuthenticated === null || loading) {
-    return (
-      <div className="flex justify-center items-center min-h-screen text-muted-foreground">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          Loading your habits...
-        </div>
-      </div>
-    );
+    return <LoadingSpinner message="Loading your habits..." />;
   }
 
   // Redirect to sign-in if user is not authenticated
@@ -93,61 +86,7 @@ const ProtectedRootLayout = () => {
       <main className="pt-28">
         <div className="mx-auto text-center">
           {/* Navigation Links */}
-          <div className="inline-flex h-9.5 items-center justify-center rounded-xl bg-muted p-1 text-muted-foreground">
-            <NavLink
-              to="/"
-              end
-              className={({ isActive }) =>
-                `navigation-link inline-flex items-center ${
-                  isActive
-                    ? "bg-primary text-white"
-                    : "hover:bg-muted-foreground/20"
-                }`
-              }
-            >
-              <LayoutDashboard className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">Dashboard</span>
-            </NavLink>
-            <NavLink
-              to="/history"
-              className={({ isActive }) =>
-                `navigation-link inline-flex items-center ${
-                  isActive
-                    ? "bg-primary text-white"
-                    : "hover:bg-muted-foreground/20"
-                }`
-              }
-            >
-              <HistoryIcon className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">History</span>
-            </NavLink>
-            <NavLink
-              to="/analytics"
-              className={({ isActive }) =>
-                `navigation-link inline-flex items-center ${
-                  isActive
-                    ? "bg-primary text-white"
-                    : "hover:bg-muted-foreground/20"
-                }`
-              }
-            >
-              <BarChart3 className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">Analytics</span>
-            </NavLink>
-            <NavLink
-              to="/profile"
-              className={({ isActive }) =>
-                `navigation-link inline-flex items-center ${
-                  isActive
-                    ? "bg-primary text-white"
-                    : "hover:bg-muted-foreground/20"
-                }`
-              }
-            >
-              <User className="w-4 h-4 sm:mr-1" />
-              <span className="hidden sm:inline">Profile</span>
-            </NavLink>
-          </div>
+          <NavigationLinks />
 
           {/* Page Content */}
           <div className="w-full sm:w-[90%] text-start p-6 m-auto">

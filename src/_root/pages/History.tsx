@@ -13,6 +13,7 @@ import type { HabitWithCompletion, Habit, HabitCompletion } from "@/types";
 import { AddEditHabit } from "@/components/shared/addEditHabit";
 import { DeleteConfirmationDialog } from "@/components/shared/DeleteConfirmationDialog";
 import { toast } from "sonner";
+import LoadingSpinner from "@/components/shared/LoadingSpinner";
 
 // Define the context type
 interface HistoryContext {
@@ -426,12 +427,7 @@ export function History(): React.JSX.Element {
 
   // Show loading state only during initial load
   if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <span className="ml-3 text-muted-foreground">Loading habits history...</span>
-      </div>
-    );
+    return <LoadingSpinner message="Loading habits history..." />;
   }
 
   const daysInMonth = getDaysInMonth(currentMonth);
