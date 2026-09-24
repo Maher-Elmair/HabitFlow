@@ -8,7 +8,16 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { LogOutIcon, Pencil, Calendar, Plus, MoreVertical, Edit, Trash2, Trash } from "lucide-react";
+import {
+  LogOutIcon,
+  Pencil,
+  Calendar,
+  Plus,
+  MoreVertical,
+  Edit,
+  Trash2,
+  Trash,
+} from "lucide-react";
 
 import EditProfileModal from "@/components/shared/EditProfile";
 import { LogoutConfirmationDialog } from "@/components/shared/LogoutConfirmationDialog";
@@ -42,7 +51,7 @@ const Profile = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [habitToDelete, setHabitToDelete] = useState<Habit | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  
+
   // Delete all habits states
   const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
@@ -54,20 +63,20 @@ const Profile = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
-      
+
       if (currentUser) {
         try {
           // Try to load profile from localStorage first
           let userProfile = await dataService.getUserProfile();
-          
+
           // If no saved profile exists, create one from Firebase data
           if (!userProfile) {
             userProfile = await dataService.createUserProfileFromFirebase(currentUser);
           }
-          
+
           setProfile(userProfile);
         } catch (error) {
-          console.error('Error loading user profile:', error);
+          console.error("Error loading user profile:", error);
           // If loading fails, create a default profile
           const defaultProfile: UserProfile = {
             id: currentUser.uid,
@@ -76,17 +85,17 @@ const Profile = () => {
             avatar: currentUser.photoURL || "https://cdn-icons-png.flaticon.com/512/149/149071.png",
             bio: "Building consistent habits, one day at a time.",
             createdAt: new Date().toISOString(),
-            lastLogin: new Date().toISOString()
+            lastLogin: new Date().toISOString(),
           };
           setProfile(defaultProfile);
         }
       } else {
         setProfile(null);
       }
-      
+
       setLoading(false);
     });
-    
+
     return () => unsubscribe();
   }, []);
 
@@ -113,16 +122,16 @@ const Profile = () => {
   // Handle saving updated profile info
   const handleSaveProfile = async (updatedProfile: Partial<UserProfile>) => {
     if (!profile) return;
-    
+
     try {
       // Save changes to localStorage
       const savedProfile = await dataService.updateUserProfile(updatedProfile);
-      
+
       // Update local state
       setProfile(savedProfile);
       toast.success("Profile updated successfully!");
     } catch (error) {
-      console.error('Error saving profile:', error);
+      console.error("Error saving profile:", error);
       // If saving to service fails, save locally only
       setProfile((prev) => {
         if (!prev) return null;
@@ -149,18 +158,18 @@ const Profile = () => {
     if (!habitToDelete) return;
 
     setIsDeleting(true);
-    
+
     try {
       await dataService.deleteHabit(habitToDelete.id);
-      
+
       const deletedHabitName = habitToDelete.name;
-      setHabits(prevHabits => prevHabits.filter(habit => habit.id !== habitToDelete.id));
-      
+      setHabits((prevHabits) => prevHabits.filter((habit) => habit.id !== habitToDelete.id));
+
       toast.success("Habit deleted successfully!", {
         description: `"${deletedHabitName}" has been removed from your habits.`,
         duration: 3000,
       });
-      
+
       setDeleteDialogOpen(false);
       setHabitToDelete(null);
     } catch (error) {
@@ -186,39 +195,37 @@ const Profile = () => {
       if (editingHabit) {
         // Update existing habit
         await dataService.updateHabit(editingHabit.id, habitData);
-        
-        setHabits(prevHabits => 
-          prevHabits.map(habit => 
-            habit.id === editingHabit.id 
-              ? { ...habit, ...habitData }
-              : habit
-          )
+
+        setHabits((prevHabits) =>
+          prevHabits.map((habit) =>
+            habit.id === editingHabit.id ? { ...habit, ...habitData } : habit,
+          ),
         );
       } else {
         // Create new habit
         const newHabit: Habit = {
           id: Date.now().toString(),
-          name: habitData.name || '',
+          name: habitData.name || "",
           description: habitData.description,
           category: habitData.category,
           image: habitData.image,
-          color: habitData.color || '#0D9488',
-          frequencyType: habitData.frequencyType || 'Daily',
+          color: habitData.color || "#0D9488",
+          frequencyType: habitData.frequencyType || "Daily",
           targetCount: habitData.targetCount || 1,
-          startDate: habitData.startDate || new Date().toISOString().split('T')[0],
+          startDate: habitData.startDate || new Date().toISOString().split("T")[0],
           endDate: habitData.endDate,
-          priorityLevel: habitData.priorityLevel || 'Medium',
+          priorityLevel: habitData.priorityLevel || "Medium",
           reminderTime: habitData.reminderTime,
           completed: false,
           streak: 0,
           current: 0,
         };
-        
+
         await dataService.addHabit(newHabit);
-        setHabits(prevHabits => [...prevHabits, newHabit]);
+        setHabits((prevHabits) => [...prevHabits, newHabit]);
       }
     } catch (error) {
-      console.error('Error saving habit:', error);
+      console.error("Error saving habit:", error);
       toast.error("Failed to save habit");
     }
   };
@@ -235,21 +242,21 @@ const Profile = () => {
   // Handle actual deletion of all habits
   const handleConfirmDeleteAll = async () => {
     setIsDeletingAll(true);
-    
+
     try {
       // Delete all habits one by one
       for (const habit of habits) {
         await dataService.deleteHabit(habit.id);
       }
-      
+
       // Clear the habits list
       setHabits([]);
-      
+
       toast.success("All habits deleted successfully!", {
         description: `All ${habits.length} habits have been removed.`,
         duration: 4000,
       });
-      
+
       setDeleteAllDialogOpen(false);
     } catch (error) {
       console.error("Error deleting all habits:", error);
@@ -299,12 +306,8 @@ const Profile = () => {
           <div className="flex-1 w-full text-center sm:text-left">
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
               <div className="flex-1">
-                <h2 className="text-lg sm:text-xl font-medium mb-1 break-word">
-                  {name}
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground break-word">
-                  {email}
-                </p>
+                <h2 className="text-lg sm:text-xl font-medium mb-1 break-word">{name}</h2>
+                <p className="text-xs sm:text-sm text-muted-foreground break-word">{email}</p>
               </div>
               <Button
                 variant="outline"
@@ -316,9 +319,7 @@ const Profile = () => {
                 Edit Profile
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground mt-2 sm:mt-0 break-word">
-              {bio}
-            </p>
+            <p className="text-sm text-muted-foreground mt-2 sm:mt-0 break-word">{bio}</p>
           </div>
         </div>
       </Card>
@@ -334,10 +335,9 @@ const Profile = () => {
               </span>
             </div>
             <p className="text-sm text-muted-foreground">
-              {habits.length === 0 
-                ? "No habits yet. Start building your routine!" 
-                : "All your active habits and their current status"
-              }
+              {habits.length === 0
+                ? "No habits yet. Start building your routine!"
+                : "All your active habits and their current status"}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
@@ -408,9 +408,7 @@ const Profile = () => {
                   )}
 
                   <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium truncate">
-                      {habit.name}
-                    </h4>
+                    <h4 className="text-sm font-medium truncate">{habit.name}</h4>
                     {habit.description && (
                       <p className="text-xs text-muted-foreground truncate mt-1">
                         {habit.description}
@@ -422,7 +420,7 @@ const Profile = () => {
                 <div className="flex items-center gap-2 sm:gap-3 flex-wrap justify-end">
                   <div className="flex items-center gap-2">
                     {/* Only show streak if greater than 0 */}
-                    {(habit.streak && habit.streak > 0) ? (
+                    {habit.streak && habit.streak > 0 ? (
                       <span
                         className="text-xs px-2.5 py-1 rounded-full whitespace-nowrap"
                         style={{
@@ -447,8 +445,8 @@ const Profile = () => {
                           habit.priorityLevel === "High"
                             ? "bg-red-500/10 text-red-600 border-red-500/20"
                             : habit.priorityLevel === "Medium"
-                            ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
-                            : "bg-green-500/10 text-green-600 border-green-500/20"
+                              ? "bg-yellow-500/10 text-yellow-600 border-yellow-500/20"
+                              : "bg-green-500/10 text-green-600 border-green-500/20"
                         }`}
                       >
                         {habit.priorityLevel}
@@ -463,11 +461,7 @@ const Profile = () => {
                   {/* Three dots menu for edit/delete actions */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-lg"
-                      >
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>

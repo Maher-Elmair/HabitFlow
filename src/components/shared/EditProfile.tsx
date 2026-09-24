@@ -1,30 +1,35 @@
-import React, { useState, useEffect } from 'react';
-import type { SyntheticEvent } from 'react';
-import { Label } from '../ui/label';
-import { Input } from '../ui/input';
-import { Button } from '../ui/button';
-import { Textarea } from '../ui/textarea';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
-} from '../ui/dialog';
-import type { EditProfileModalProps, UserProfile } from '@/types';
+import React, { useState, useEffect } from "react";
+import type { SyntheticEvent } from "react";
+import { Label } from "../ui/label";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
+import { Textarea } from "../ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import type { EditProfileModalProps, UserProfile } from "@/types";
 
-function EditProfileModal({ isOpen, onClose, onSave, profile }: EditProfileModalProps): React.ReactElement {
-  const [name, setName] = useState<string>('');
-  const [email, setEmail] = useState<string>('');
-  const [avatar, setAvatar] = useState<string>('');
-  const [bio, setBio] = useState<string>('');
+function EditProfileModal({
+  isOpen,
+  onClose,
+  onSave,
+  profile,
+}: EditProfileModalProps): React.ReactElement {
+  const [name, setName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [avatar, setAvatar] = useState<string>("");
+  const [bio, setBio] = useState<string>("");
 
   useEffect(() => {
     setName(profile.name);
     setEmail(profile.email);
-    setAvatar(profile.avatar || '');
-    setBio(profile.bio || '');
+    setAvatar(profile.avatar || "");
+    setBio(profile.bio || "");
   }, [profile, isOpen]);
 
   const handleSave = (): void => {
@@ -42,7 +47,7 @@ function EditProfileModal({ isOpen, onClose, onSave, profile }: EditProfileModal
   };
 
   const handleImageError = (e: SyntheticEvent<HTMLImageElement>): void => {
-    e.currentTarget.src = '';
+    e.currentTarget.src = "";
   };
 
   return (
@@ -94,9 +99,9 @@ function EditProfileModal({ isOpen, onClose, onSave, profile }: EditProfileModal
             />
             {avatar && (
               <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg">
-                <img 
-                  src={avatar} 
-                  alt="Avatar preview" 
+                <img
+                  src={avatar}
+                  alt="Avatar preview"
                   className="w-12 h-12 rounded-full object-cover"
                   onError={handleImageError}
                 />
@@ -120,11 +125,7 @@ function EditProfileModal({ isOpen, onClose, onSave, profile }: EditProfileModal
 
         {/* Actions */}
         <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0 pt-4">
-          <Button 
-            variant="outline" 
-            onClick={onClose} 
-            className="w-full sm:w-auto"
-          >
+          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
             Cancel
           </Button>
           <Button

@@ -2,11 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { HabitCard } from "@/components/shared/HabitCard";
-import {
-  Calendar as CalendarIcon,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 import { useOutletContext } from "react-router";
 import { dataService } from "@/services/dataService";
 import type { HabitWithCompletion, Habit, HabitCompletion } from "@/types";
@@ -74,8 +70,7 @@ export function History(): React.JSX.Element {
         weekday: "long",
         month: "long",
         day: "numeric",
-        year:
-          date.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+        year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
       });
     }
   }
@@ -90,10 +85,8 @@ export function History(): React.JSX.Element {
       const checkDate = new Date(dateObj);
       checkDate.setDate(checkDate.getDate() - i);
       const checkDateStr = formatDate(checkDate);
-      
-      const completion = completions.find(
-        (c) => c.habitId === habitId && c.date === checkDateStr
-      );
+
+      const completion = completions.find((c) => c.habitId === habitId && c.date === checkDateStr);
 
       if (completion?.completed) {
         streak++;
@@ -118,18 +111,16 @@ export function History(): React.JSX.Element {
         const normalizedSelectedDate = new Date(
           selectedDateObj.getFullYear(),
           selectedDateObj.getMonth(),
-          selectedDateObj.getDate()
+          selectedDateObj.getDate(),
         );
         const normalizedStartDate = new Date(
           startDate.getFullYear(),
           startDate.getMonth(),
-          startDate.getDate()
+          startDate.getDate(),
         );
-        const normalizedEndDate = endDate ? new Date(
-          endDate.getFullYear(),
-          endDate.getMonth(),
-          endDate.getDate()
-        ) : null;
+        const normalizedEndDate = endDate
+          ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+          : null;
 
         // Check if habit should be active on this date
         const isAfterStart = normalizedSelectedDate >= normalizedStartDate;
@@ -138,9 +129,7 @@ export function History(): React.JSX.Element {
         return isAfterStart && isBeforeEnd;
       })
       .map((habit) => {
-        const completion = completions.find(
-          (c) => c.habitId === habit.id && c.date === dateStr
-        );
+        const completion = completions.find((c) => c.habitId === habit.id && c.date === dateStr);
 
         // Use the actual completion status from completions array
         const isCompleted = completion?.completed || false;
@@ -181,30 +170,26 @@ export function History(): React.JSX.Element {
   const handleNavigationWithToday = (direction: "prev" | "next"): void => {
     const today = new Date();
     const newMonth = new Date(currentMonth);
-    
+
     if (direction === "prev") {
       newMonth.setMonth(newMonth.getMonth() - 1);
     } else {
       newMonth.setMonth(newMonth.getMonth() + 1);
     }
-    
+
     setCurrentMonth(newMonth);
-    
+
     // If the new month is the current month, set date to today
-    const isNewMonthCurrent = 
-      newMonth.getMonth() === today.getMonth() && 
-      newMonth.getFullYear() === today.getFullYear();
-    
+    const isNewMonthCurrent =
+      newMonth.getMonth() === today.getMonth() && newMonth.getFullYear() === today.getFullYear();
+
     if (isNewMonthCurrent) {
       setSelectedDate(today);
     }
   };
 
   // Handle habit toggle - UPDATED: Use toggleHabitCompletionForDate for consistency
-  const handleToggleHabit = async (
-    habitId: string,
-    date: string
-  ): Promise<void> => {
+  const handleToggleHabit = async (habitId: string, date: string): Promise<void> => {
     try {
       console.log(`Toggling habit ${habitId} for date ${date}`);
 
@@ -212,11 +197,9 @@ export function History(): React.JSX.Element {
       const updatedCompletion = await dataService.toggleHabitCompletionForDate(habitId, date);
 
       // Update local completions state
-      setCompletions(prev => {
-        const existingIndex = prev.findIndex(
-          c => c.habitId === habitId && c.date === date
-        );
-        
+      setCompletions((prev) => {
+        const existingIndex = prev.findIndex((c) => c.habitId === habitId && c.date === date);
+
         if (existingIndex !== -1) {
           const newCompletions = [...prev];
           newCompletions[existingIndex] = updatedCompletion;
@@ -231,11 +214,8 @@ export function History(): React.JSX.Element {
       setHabits(updatedHabits);
 
       toast.success(
-        updatedCompletion.completed 
-          ? "Habit marked as completed!" 
-          : "Habit marked as incomplete"
+        updatedCompletion.completed ? "Habit marked as completed!" : "Habit marked as incomplete",
       );
-
     } catch (error) {
       console.error("Error toggling habit completion:", error);
       toast.error("Failed to update habit");
@@ -250,7 +230,7 @@ export function History(): React.JSX.Element {
 
   // Handle habit deletion request
   const handleDeleteHabit = (id: string) => {
-    const habit = habits.find(h => h.id === id);
+    const habit = habits.find((h) => h.id === id);
     if (habit) {
       setHabitToDelete(habit);
       setDeleteDialogOpen(true);
@@ -267,15 +247,11 @@ export function History(): React.JSX.Element {
       await dataService.deleteHabit(habitToDelete.id);
 
       const deletedHabitName = habitToDelete.name;
-      
-      setHabits((prevHabits) =>
-        prevHabits.filter((habit) => habit.id !== habitToDelete.id)
-      );
+
+      setHabits((prevHabits) => prevHabits.filter((habit) => habit.id !== habitToDelete.id));
 
       // Also remove related completions from local state
-      setCompletions(prev => 
-        prev.filter(c => c.habitId !== habitToDelete.id)
-      );
+      setCompletions((prev) => prev.filter((c) => c.habitId !== habitToDelete.id));
 
       toast.success("Habit deleted successfully!", {
         description: `"${deletedHabitName}" has been removed from your habits.`,
@@ -304,10 +280,10 @@ export function History(): React.JSX.Element {
 
         setHabits((prevHabits) =>
           prevHabits.map((habit) =>
-            habit.id === editingHabit.id ? { ...habit, ...habitData } : habit
-          )
+            habit.id === editingHabit.id ? { ...habit, ...habitData } : habit,
+          ),
         );
-        
+
         toast.success("Habit updated successfully!");
       } else {
         // Create new habit - use dataService's formatDate method
@@ -331,18 +307,18 @@ export function History(): React.JSX.Element {
         };
 
         await dataService.addHabit(newHabit);
-        
+
         // Update habits state only, no need to reload completions
         const updatedHabits = await dataService.getHabits();
         setHabits(updatedHabits);
-        
+
         toast.success("Habit created successfully!");
       }
-      
+
       setIsModalOpen(false);
       setEditingHabit(null);
     } catch (error) {
-      console.error('Error saving habit:', error);
+      console.error("Error saving habit:", error);
       toast.error("Failed to save habit");
     }
   };
@@ -362,33 +338,30 @@ export function History(): React.JSX.Element {
       // Check if habit is active on this date
       const startDate = new Date(habit.startDate || "2025-01-01");
       const endDate = habit.endDate ? new Date(habit.endDate) : null;
-      
+
       // Normalize dates for comparison
       const normalizedSelectedDate = new Date(
         selectedDateObj.getFullYear(),
         selectedDateObj.getMonth(),
-        selectedDateObj.getDate()
+        selectedDateObj.getDate(),
       );
       const normalizedStartDate = new Date(
         startDate.getFullYear(),
         startDate.getMonth(),
-        startDate.getDate()
+        startDate.getDate(),
       );
-      const normalizedEndDate = endDate ? new Date(
-        endDate.getFullYear(),
-        endDate.getMonth(),
-        endDate.getDate()
-      ) : null;
+      const normalizedEndDate = endDate
+        ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+        : null;
 
-      const isActive = normalizedSelectedDate >= normalizedStartDate &&
+      const isActive =
+        normalizedSelectedDate >= normalizedStartDate &&
         (!normalizedEndDate || normalizedSelectedDate <= normalizedEndDate);
 
       if (!isActive) return false;
 
       // Check if habit is completed on this date
-      const completion = completions.find(
-        (c) => c.habitId === habit.id && c.date === dateStr
-      );
+      const completion = completions.find((c) => c.habitId === habit.id && c.date === dateStr);
       return completion?.completed;
     });
   }
@@ -432,8 +405,8 @@ export function History(): React.JSX.Element {
 
   const daysInMonth = getDaysInMonth(currentMonth);
   const today = new Date();
-  const isCurrentMonth = 
-    currentMonth.getMonth() === today.getMonth() && 
+  const isCurrentMonth =
+    currentMonth.getMonth() === today.getMonth() &&
     currentMonth.getFullYear() === today.getFullYear();
 
   const selectedDateStr = formatDate(selectedDate);
@@ -445,7 +418,7 @@ export function History(): React.JSX.Element {
   // Format month display as "14 November 2025"
   const formattedMonthDisplay = `${currentMonth.getDate()} ${currentMonth.toLocaleDateString(
     "en-US",
-    { month: "long" }
+    { month: "long" },
   )} ${currentMonth.getFullYear()}`;
 
   return (
@@ -473,9 +446,7 @@ export function History(): React.JSX.Element {
             </Button>
 
             <div className="flex items-center gap-3">
-              <span className="text-xl font-bold text-foreground">
-                {formattedMonthDisplay}
-              </span>
+              <span className="text-xl font-bold text-foreground">{formattedMonthDisplay}</span>
             </div>
 
             <div className="flex items-center gap-2">
@@ -518,11 +489,9 @@ export function History(): React.JSX.Element {
             {/* Calendar Days */}
             <div className="grid grid-cols-7 gap-1">
               {daysInMonth.map((date, index) => {
-                const isCurrentMonthDate =
-                  date.getMonth() === currentMonth.getMonth();
+                const isCurrentMonthDate = date.getMonth() === currentMonth.getMonth();
                 const isToday = formatDate(date) === formatDate(today);
-                const isSelected =
-                  formatDate(date) === formatDate(selectedDate);
+                const isSelected = formatDate(date) === formatDate(selectedDate);
                 const hasHabits = hasCompletedHabits(date);
                 const dayHabits = getHabitsForCalendarDate(date);
 
@@ -575,9 +544,7 @@ export function History(): React.JSX.Element {
                         />
                       ))}
                       {dayHabits.length > 3 && (
-                        <div className="text-xs text-muted-foreground">
-                          +{dayHabits.length - 3}
-                        </div>
+                        <div className="text-xs text-muted-foreground">+{dayHabits.length - 3}</div>
                       )}
                     </div>
 
@@ -606,8 +573,8 @@ export function History(): React.JSX.Element {
                   stats.percentage === 100
                     ? "bg-primary/20"
                     : stats.percentage > 0
-                    ? "bg-chart-2/20"
-                    : "bg-muted"
+                      ? "bg-chart-2/20"
+                      : "bg-muted"
                 }`}
               >
                 <CalendarIcon
@@ -615,16 +582,14 @@ export function History(): React.JSX.Element {
                     stats.percentage === 100
                       ? "text-primary"
                       : stats.percentage > 0
-                      ? "text-chart-2"
-                      : "text-muted-foreground"
+                        ? "text-chart-2"
+                        : "text-muted-foreground"
                   }`}
                 />
               </div>
 
               <div>
-                <h3 className="text-foreground">
-                  {formatDisplayDate(selectedDate)}
-                </h3>
+                <h3 className="text-foreground">{formatDisplayDate(selectedDate)}</h3>
                 <p className="text-sm text-muted-foreground">
                   {selectedDate.toLocaleDateString("en-US", {
                     weekday: "long",
@@ -641,17 +606,15 @@ export function History(): React.JSX.Element {
                 <span className="text-muted-foreground text-sm">
                   {stats.completed} / {stats.total}
                 </span>
-                {stats.percentage === 100 && stats.total > 0 && (
-                  <span className="text-xl">🎉</span>
-                )}
+                {stats.percentage === 100 && stats.total > 0 && <span className="text-xl">🎉</span>}
               </div>
               <div
                 className={`text-xs ${
                   stats.percentage === 100
                     ? "text-primary"
                     : stats.percentage > 0
-                    ? "text-chart-2"
-                    : "text-muted-foreground"
+                      ? "text-chart-2"
+                      : "text-muted-foreground"
                 }`}
               >
                 {stats.percentage}% complete

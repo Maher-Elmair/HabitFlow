@@ -52,7 +52,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   // Apply theme to document
   useEffect(() => {
     if (!isInitialized) return;
-    
+
     const root = document.documentElement;
     root.classList.remove("light", "dark");
     root.classList.add(mode);
@@ -60,20 +60,16 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
   }, [mode, isInitialized]);
 
   const toggleTheme = () => {
-    setMode(prev => prev === "light" ? "dark" : "light");
+    setMode((prev) => (prev === "light" ? "dark" : "light"));
   };
 
   const value: ThemeContextValue = {
     mode,
     toggleTheme,
-    isDark: mode === "dark"
+    isDark: mode === "dark",
   };
 
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 // ============================================================================
@@ -85,10 +81,7 @@ interface ThemeToggleProps {
   className?: string;
 }
 
-export function ThemeToggle({ 
-  showLabel = false, 
-  className = "" 
-}: ThemeToggleProps) {
+export function ThemeToggle({ showLabel = false, className = "" }: ThemeToggleProps) {
   const { toggleTheme, isDark } = useTheme();
 
   return (
@@ -102,17 +95,9 @@ export function ThemeToggle({
       `}
       aria-label={`Switch to ${isDark ? "light" : "dark"} theme`}
     >
-      {isDark ? (
-        <Moon className="w-5 h-5" />
-      ) : (
-        <Sun className="w-5 h-5" />
-      )}
+      {isDark ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
 
-      {showLabel && (
-        <span className="text-sm font-medium">
-          {isDark ? "Dark" : "Light"}
-        </span>
-      )}
+      {showLabel && <span className="text-sm font-medium">{isDark ? "Dark" : "Light"}</span>}
     </button>
   );
 }

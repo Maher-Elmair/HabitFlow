@@ -21,12 +21,8 @@ export function HabitVisualization() {
         transition={{ duration: 0.6 }}
         className="text-center space-y-3"
       >
-        <h1 className="text-6xl tracking-tight text-primary-foreground">
-          HabitFlow
-        </h1>
-        <p className="text-xl text-primary-foreground/80">
-          Build better habits, one day at a time
-        </p>
+        <h1 className="text-6xl tracking-tight text-primary-foreground">HabitFlow</h1>
+        <p className="text-xl text-primary-foreground/80">Build better habits, one day at a time</p>
       </motion.div>
 
       {/* Visual Elements */}
@@ -45,7 +41,7 @@ export function HabitVisualization() {
               <span className="text-2xl text-primary-foreground">5</span>
             </div>
           </div>
-          
+
           <div className="flex justify-between gap-2">
             {habitData.map((item, index) => (
               <motion.div
@@ -64,9 +60,7 @@ export function HabitVisualization() {
                 >
                   {item.completed && <CheckCircle2 className="w-5 h-5" />}
                 </div>
-                <span className="text-xs text-primary-foreground/70">
-                  {item.day}
-                </span>
+                <span className="text-xs text-primary-foreground/70">{item.day}</span>
               </motion.div>
             ))}
           </div>
@@ -86,7 +80,7 @@ export function HabitVisualization() {
             </div>
             <p className="text-3xl text-primary-foreground">12</p>
           </div>
-          
+
           <div className="bg-primary-foreground/10 backdrop-blur-sm rounded-xl p-4 space-y-2">
             <div className="flex items-center gap-2 text-primary-foreground/70">
               <TrendingUp className="w-4 h-4" />

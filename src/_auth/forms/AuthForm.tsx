@@ -13,13 +13,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
@@ -53,15 +47,15 @@ type FormValues = z.infer<typeof SigninSchema> | z.infer<typeof SignupSchema>;
 const AuthForm = () => {
   const location = useLocation();
   const isSignIn = location.pathname === "/sign-in";
-  
+
   const [showPassword, setShowPassword] = useState(false);
-  
+
   // Use appropriate schema based on route
   const schema = isSignIn ? SigninSchema : SignupSchema;
-  
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: isSignIn 
+    defaultValues: isSignIn
       ? { email: "", password: "" }
       : { fullName: "", email: "", password: "" },
   });
@@ -75,11 +69,7 @@ const AuthForm = () => {
         toast.success("Logged in successfully!");
       } else {
         const { fullName, email, password } = values as z.infer<typeof SignupSchema>;
-        const userCredential = await createUserWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, {
           displayName: fullName,
         });
@@ -123,7 +113,7 @@ const AuthForm = () => {
       submitText: "Sign In",
       linkText: "Don't have an account?",
       linkUrl: "/sign-up",
-      linkLabel: "Sign up"
+      linkLabel: "Sign up",
     },
     signup: {
       title: "Create an account",
@@ -131,8 +121,8 @@ const AuthForm = () => {
       submitText: "Create Account",
       linkText: "Already have an account?",
       linkUrl: "/sign-in",
-      linkLabel: "Sign in"
-    }
+      linkLabel: "Sign in",
+    },
   };
 
   const config = isSignIn ? authConfig.signin : authConfig.signup;
@@ -147,9 +137,7 @@ const AuthForm = () => {
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="space-y-1">
           <CardTitle className="text-center">{config.title}</CardTitle>
-          <CardDescription className="text-center">
-            {config.description}
-          </CardDescription>
+          <CardDescription className="text-center">{config.description}</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-4">
@@ -188,11 +176,7 @@ const AuthForm = () => {
               type="button"
               onClick={handleGithubLogin}
             >
-              <svg
-                className="w-5 h-5 mr-2"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
+              <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                 <path
                   fillRule="evenodd"
                   clipRule="evenodd"
@@ -209,9 +193,7 @@ const AuthForm = () => {
               <Separator />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">
-                Or continue with
-              </span>
+              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
             </div>
           </div>
 
@@ -227,11 +209,7 @@ const AuthForm = () => {
                     <FormItem>
                       <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="John Doe"
-                          className="rounded-full"
-                          {...field}
-                        />
+                        <Input placeholder="John Doe" className="rounded-full" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -295,10 +273,7 @@ const AuthForm = () => {
               {/* Forgot password link (signin only) */}
               {isSignIn && (
                 <div className="flex justify-end">
-                  <button
-                    type="button"
-                    className="text-sm text-primary hover:underline"
-                  >
+                  <button type="button" className="text-sm text-primary hover:underline">
                     Forgot password?
                   </button>
                 </div>
@@ -314,10 +289,7 @@ const AuthForm = () => {
           {/* Navigation link */}
           <div className="text-center text-sm">
             <span className="text-muted-foreground">{config.linkText} </span>
-            <Link
-              to={config.linkUrl}
-              className="text-primary hover:underline transition-colors"
-            >
+            <Link to={config.linkUrl} className="text-primary hover:underline transition-colors">
               {config.linkLabel}
             </Link>
           </div>

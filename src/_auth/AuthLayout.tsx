@@ -26,12 +26,8 @@ const AuthLayout = () => {
         <div className="w-full max-w-md">
           {/* Mobile Brand Header */}
           <div className="lg:hidden text-center mb-4 space-y-2">
-            <h1 className="text-4xl tracking-tight text-foreground">
-              HabitFlow
-            </h1>
-            <p className="text-muted-foreground">
-              Build better habits, one day at a time
-            </p>
+            <h1 className="text-4xl tracking-tight text-foreground">HabitFlow</h1>
+            <p className="text-muted-foreground">Build better habits, one day at a time</p>
           </div>
 
           {/* Auth Form Section */}

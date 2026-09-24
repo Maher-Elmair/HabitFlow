@@ -1,13 +1,14 @@
 // dataService.ts
-import type { Habit, UserProfile, StoredData, HabitCompletion } from '@/types';
+import type { Habit, UserProfile, StoredData, HabitCompletion } from "@/types";
+import { calculateHabitStreak } from "@/lib/streak";
 
 /**
  * Data service for managing habits, user profiles, and completions
  * Provides centralized data management with local storage persistence
  */
 class DataService {
-  private readonly STORAGE_KEY = 'habitflow_data';
-  private readonly DATA_VERSION = '1.0.0';
+  private readonly STORAGE_KEY = "habitflow_data";
+  private readonly DATA_VERSION = "1.0.0";
 
   /**
    * Get all application data from local storage
@@ -15,18 +16,20 @@ class DataService {
    */
   async getData(): Promise<StoredData> {
     try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
+      // SSR-safe: this module is imported by route components that render on the server.
+      const stored =
+        typeof window !== "undefined" ? window.localStorage.getItem(this.STORAGE_KEY) : null;
       if (stored) {
         const data: StoredData = JSON.parse(stored);
-        
+
         if (this.validateData(data)) {
           return data;
         }
       }
-      
+
       return this.getDefaultData();
     } catch (error) {
-      console.error('Error reading data from storage:', error);
+      console.error("Error reading data from storage:", error);
       return this.getDefaultData();
     }
   }
@@ -40,13 +43,14 @@ class DataService {
       const dataToSave: StoredData = {
         ...data,
         lastSync: new Date().toISOString(),
-        version: this.DATA_VERSION
+        version: this.DATA_VERSION,
       };
-      
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(dataToSave));
+
+      if (typeof window === "undefined") return;
+      window.localStorage.setItem(this.STORAGE_KEY, JSON.stringify(dataToSave));
     } catch (error) {
-      console.error('Error saving data to storage:', error);
-      throw new Error('Failed to save data');
+      console.error("Error saving data to storage:", error);
+      throw new Error("Failed to save data");
     }
   }
 
@@ -58,34 +62,32 @@ class DataService {
   async getHabitsForDate(date: string): Promise<Habit[]> {
     const data = await this.getData();
     const targetDate = new Date(date);
-    
-    return data.habits.filter(habit => {
-      const startDate = new Date(habit.startDate || '2025-01-01');
+
+    return data.habits.filter((habit) => {
+      const startDate = new Date(habit.startDate || "2025-01-01");
       const endDate = habit.endDate ? new Date(habit.endDate) : null;
-      
+
       // Normalize dates to compare only year, month, and day (ignore time)
       const normalizedTargetDate = new Date(
-        targetDate.getFullYear(), 
-        targetDate.getMonth(), 
-        targetDate.getDate()
+        targetDate.getFullYear(),
+        targetDate.getMonth(),
+        targetDate.getDate(),
       );
       const normalizedStartDate = new Date(
-        startDate.getFullYear(), 
-        startDate.getMonth(), 
-        startDate.getDate()
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate(),
       );
-      const normalizedEndDate = endDate ? new Date(
-        endDate.getFullYear(), 
-        endDate.getMonth(), 
-        endDate.getDate()
-      ) : null;
-      
+      const normalizedEndDate = endDate
+        ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+        : null;
+
       // Check if habit should be active on this date
       // Include habits where start date is on or before target date
       const isAfterStart = normalizedTargetDate >= normalizedStartDate;
       // If end date exists, target date should be on or before end date
       const isBeforeEnd = !normalizedEndDate || normalizedTargetDate <= normalizedEndDate;
-      
+
       return isAfterStart && isBeforeEnd;
     });
   }
@@ -96,7 +98,7 @@ class DataService {
    */
   async getHabitCompletionsForDate(date: string): Promise<HabitCompletion[]> {
     const data = await this.getData();
-    return data.habitCompletions?.filter(c => c.date === date) || [];
+    return data.habitCompletions?.filter((c) => c.date === date) || [];
   }
 
   /**
@@ -105,17 +107,17 @@ class DataService {
    */
   async toggleHabitCompletionForDate(habitId: string, date: string): Promise<HabitCompletion> {
     const data = await this.getData();
-    
+
     if (!data.habitCompletions) {
       data.habitCompletions = [];
     }
-    
+
     const existingCompletion = data.habitCompletions.find(
-      c => c.habitId === habitId && c.date === date
+      (c) => c.habitId === habitId && c.date === date,
     );
-    
+
     const completed = !existingCompletion?.completed;
-    
+
     if (existingCompletion) {
       existingCompletion.completed = completed;
       existingCompletion.completedAt = completed ? new Date().toISOString() : undefined;
@@ -124,51 +126,30 @@ class DataService {
         habitId,
         date,
         completed,
-        completedAt: completed ? new Date().toISOString() : undefined
+        completedAt: completed ? new Date().toISOString() : undefined,
       });
     }
-    
+
     await this.saveData(data);
-    
+
     // Update habit streak after completion change
     await this.updateHabitStreak(habitId);
-    
-    return data.habitCompletions.find(c => c.habitId === habitId && c.date === date)!;
+
+    return data.habitCompletions.find((c) => c.habitId === habitId && c.date === date)!;
   }
 
   /**
-   * Calculate and update streak for a habit based on completion history
-   * Streak is calculated as consecutive days of completion up to current date
+   * Calculate and update streak for a habit based on completion history.
+   * Delegates to the single shared streak implementation (@/lib/streak) so
+   * Home, History, Analytics and storage can never disagree.
    */
   private async updateHabitStreak(habitId: string): Promise<void> {
     const data = await this.getData();
-    const habit = data.habits.find(h => h.id === habitId);
-    
+    const habit = data.habits.find((h) => h.id === habitId);
+
     if (!habit) return;
-    
-    const completions = data.habitCompletions?.filter(c => c.habitId === habitId && c.completed) || [];
-    
-    // Sort completions by date descending (most recent first)
-    completions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    
-    let streak = 0;
-    let currentDate = new Date();
-    
-    // Calculate current streak by checking consecutive days
-    for (let i = 0; i < completions.length; i++) {
-      const completionDate = new Date(completions[i].date);
-      const diffTime = Math.abs(currentDate.getTime() - completionDate.getTime());
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      if (diffDays === streak + 1) {
-        streak++;
-        currentDate = completionDate;
-      } else {
-        break;
-      }
-    }
-    
-    habit.streak = streak;
+
+    habit.streak = calculateHabitStreak(habitId, data.habitCompletions || []);
     await this.saveData(data);
   }
 
@@ -178,7 +159,7 @@ class DataService {
    */
   async addHabit(habit: Habit): Promise<void> {
     const data = await this.getData();
-    
+
     // Ensure start date is today if not provided, and format it correctly
     if (!habit.startDate) {
       habit.startDate = this.formatDate(new Date());
@@ -186,17 +167,17 @@ class DataService {
       // Ensure the provided start date is properly formatted
       habit.startDate = this.formatDate(new Date(habit.startDate));
     }
-    
+
     // If end date is provided, ensure it's properly formatted
     if (habit.endDate) {
       habit.endDate = this.formatDate(new Date(habit.endDate));
     }
-    
+
     // Initialize completion status and tracking fields
     habit.completed = false;
     habit.streak = 0;
     habit.current = 0;
-    
+
     data.habits.push(habit);
     await this.saveData(data);
   }
@@ -226,10 +207,19 @@ class DataService {
    */
   async updateHabit(habitId: string, updates: Partial<Habit>): Promise<void> {
     const data = await this.getData();
-    const habitIndex = data.habits.findIndex(h => h.id === habitId);
-    
+    const habitIndex = data.habits.findIndex((h) => h.id === habitId);
+
     if (habitIndex !== -1) {
-      data.habits[habitIndex] = { ...data.habits[habitIndex], ...updates };
+      // Normalize dates so stored habits always use YYYY-MM-DD (same as addHabit)
+      const normalized: Partial<Habit> = { ...updates };
+      if (normalized.startDate) {
+        normalized.startDate = this.formatDate(new Date(normalized.startDate));
+      }
+      if (normalized.endDate) {
+        normalized.endDate = this.formatDate(new Date(normalized.endDate));
+      }
+
+      data.habits[habitIndex] = { ...data.habits[habitIndex], ...normalized };
       await this.saveData(data);
     } else {
       throw new Error(`Habit with ID ${habitId} not found`);
@@ -242,13 +232,23 @@ class DataService {
    */
   async deleteHabit(habitId: string): Promise<void> {
     const data = await this.getData();
-    data.habits = data.habits.filter(h => h.id !== habitId);
-    
+    data.habits = data.habits.filter((h) => h.id !== habitId);
+
     // Also remove related completions
     if (data.habitCompletions) {
-      data.habitCompletions = data.habitCompletions.filter(c => c.habitId !== habitId);
+      data.habitCompletions = data.habitCompletions.filter((c) => c.habitId !== habitId);
     }
-    
+
+    await this.saveData(data);
+  }
+
+  /**
+   * Delete every habit and all completion records in a single write.
+   */
+  async deleteAllHabits(): Promise<void> {
+    const data = await this.getData();
+    data.habits = [];
+    data.habitCompletions = [];
     await this.saveData(data);
   }
 
@@ -258,7 +258,7 @@ class DataService {
    */
   async getHabitCompletions(habitId: string): Promise<HabitCompletion[]> {
     const data = await this.getData();
-    return data.habitCompletions?.filter(c => c.habitId === habitId) || [];
+    return data.habitCompletions?.filter((c) => c.habitId === habitId) || [];
   }
 
   /**
@@ -276,7 +276,7 @@ class DataService {
    */
   async getHabitCompletionsByHabitId(habitId: string): Promise<HabitCompletion[]> {
     const data = await this.getData();
-    return data.habitCompletions?.filter(c => c.habitId === habitId) || [];
+    return data.habitCompletions?.filter((c) => c.habitId === habitId) || [];
   }
 
   /**
@@ -285,32 +285,34 @@ class DataService {
    */
   async updateHabitCompletion(habitId: string, date: string, completed: boolean): Promise<void> {
     const data = await this.getData();
-    
+
     // Initialize habitCompletions array if it doesn't exist
     if (!data.habitCompletions) {
       data.habitCompletions = [];
     }
-    
+
     const completionIndex = data.habitCompletions.findIndex(
-      c => c.habitId === habitId && c.date === date
+      (c) => c.habitId === habitId && c.date === date,
     );
-    
+
     if (completionIndex !== -1) {
       // Update existing completion
       data.habitCompletions[completionIndex].completed = completed;
-      data.habitCompletions[completionIndex].completedAt = completed ? new Date().toISOString() : undefined;
+      data.habitCompletions[completionIndex].completedAt = completed
+        ? new Date().toISOString()
+        : undefined;
     } else {
       // Create new completion
       data.habitCompletions.push({
         habitId,
         date,
         completed,
-        completedAt: completed ? new Date().toISOString() : undefined
+        completedAt: completed ? new Date().toISOString() : undefined,
       });
     }
-    
+
     await this.saveData(data);
-    
+
     // Update streak after completion change
     await this.updateHabitStreak(habitId);
   }
@@ -321,21 +323,21 @@ class DataService {
    */
   async addHabitCompletion(completion: HabitCompletion): Promise<void> {
     const data = await this.getData();
-    
+
     // Initialize habitCompletions array if it doesn't exist
     if (!data.habitCompletions) {
       data.habitCompletions = [];
     }
-    
+
     // Remove existing completion for the same habit and date
     data.habitCompletions = data.habitCompletions.filter(
-      c => !(c.habitId === completion.habitId && c.date === completion.date)
+      (c) => !(c.habitId === completion.habitId && c.date === completion.date),
     );
-    
+
     // Add new completion
     data.habitCompletions.push(completion);
     await this.saveData(data);
-    
+
     // Update streak after adding completion
     await this.updateHabitStreak(completion.habitId);
   }
@@ -367,14 +369,14 @@ class DataService {
    */
   async updateUserProfile(updates: Partial<UserProfile>): Promise<UserProfile> {
     const data = await this.getData();
-    
+
     if (!data.userProfile) {
-      throw new Error('No user profile found');
+      throw new Error("No user profile found");
     }
 
     const updatedProfile: UserProfile = {
       ...data.userProfile,
-      ...updates
+      ...updates,
     };
 
     data.userProfile = updatedProfile;
@@ -386,15 +388,20 @@ class DataService {
    * Create user profile from Firebase authentication data
    * Automatically generates profile from Firebase user object
    */
-  async createUserProfileFromFirebase(firebaseUser: { uid: string; displayName?: string | null; email?: string | null; photoURL?: string | null }): Promise<UserProfile> {
+  async createUserProfileFromFirebase(firebaseUser: {
+    uid: string;
+    displayName?: string | null;
+    email?: string | null;
+    photoURL?: string | null;
+  }): Promise<UserProfile> {
     const profile: UserProfile = {
       id: firebaseUser.uid,
-      name: firebaseUser.displayName || 'User',
-      email: firebaseUser.email || '',
-      avatar: firebaseUser.photoURL || '',
-      bio: 'Building consistent habits, one day at a time.',
+      name: firebaseUser.displayName || "User",
+      email: firebaseUser.email || "",
+      avatar: firebaseUser.photoURL || "",
+      bio: "Building consistent habits, one day at a time.",
       createdAt: new Date().toISOString(),
-      lastLogin: new Date().toISOString()
+      lastLogin: new Date().toISOString(),
     };
 
     await this.saveUserProfile(profile);
@@ -429,15 +436,15 @@ class DataService {
   async importData(jsonData: string): Promise<void> {
     try {
       const importedData: StoredData = JSON.parse(jsonData);
-      
+
       if (this.validateData(importedData)) {
         await this.saveData(importedData);
       } else {
-        throw new Error('Invalid data format');
+        throw new Error("Invalid data format");
       }
     } catch (error) {
-      console.error('Error importing data:', error);
-      throw new Error('Failed to import data');
+      console.error("Error importing data:", error);
+      throw new Error("Failed to import data");
     }
   }
 
@@ -446,7 +453,8 @@ class DataService {
    * Removes all habits, completions, and user profile
    */
   async clearData(): Promise<void> {
-    localStorage.removeItem(this.STORAGE_KEY);
+    if (typeof window === "undefined") return;
+    window.localStorage.removeItem(this.STORAGE_KEY);
   }
 
   // Private helper methods
@@ -461,7 +469,7 @@ class DataService {
       userProfile: null,
       habitCompletions: this.getDefaultCompletions(),
       lastSync: new Date().toISOString(),
-      version: this.DATA_VERSION
+      version: this.DATA_VERSION,
     };
   }
 
@@ -473,7 +481,7 @@ class DataService {
     const today = this.formatDate(new Date());
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth();
-    
+
     // Calculate date ranges for different habit scenarios
     const startOfCurrentMonth = this.formatDate(new Date(currentYear, currentMonth, 1));
     const endOfCurrentMonth = this.formatDate(new Date(currentYear, currentMonth + 1, 0));
@@ -653,7 +661,7 @@ class DataService {
         completed: false,
         streak: 0,
         current: 0,
-      }
+      },
     ];
   }
 
@@ -664,94 +672,94 @@ class DataService {
   private getDefaultCompletions(): HabitCompletion[] {
     const completions: HabitCompletion[] = [];
     const today = new Date();
-    
+
     // Generate completion data for the past 60 days
     for (let i = 0; i < 60; i++) {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       const dateStr = this.formatDate(date);
-      
+
       // Habit 1: Meditation - consistently completed for current month
       if (i < 5 && this.isDateInCurrentMonth(date)) {
         completions.push({
           habitId: "1",
           date: dateStr,
           completed: true,
-          completedAt: date.toISOString()
+          completedAt: date.toISOString(),
         });
       }
-      
+
       // Habit 2: Reading - consistently completed for current month
       if (i < 12 && this.isDateInCurrentMonth(date)) {
         completions.push({
           habitId: "2",
           date: dateStr,
           completed: true,
-          completedAt: date.toISOString()
+          completedAt: date.toISOString(),
         });
       }
-      
+
       // Habit 3: Exercise - consistently completed for long period
       if (i < 45) {
         completions.push({
           habitId: "3",
           date: dateStr,
           completed: true,
-          completedAt: date.toISOString()
+          completedAt: date.toISOString(),
         });
       }
-      
+
       // Habit 4: Water - partially completed (6 out of last 8 days)
       if (i < 6) {
         completions.push({
           habitId: "4",
           date: dateStr,
           completed: true,
-          completedAt: date.toISOString()
+          completedAt: date.toISOString(),
         });
       }
-      
+
       // Habit 6: Gratitude - consistently completed for long period
       if (i < 60) {
         completions.push({
           habitId: "6",
           date: dateStr,
           completed: true,
-          completedAt: date.toISOString()
+          completedAt: date.toISOString(),
         });
       }
-      
+
       // Habit 7: Weekly Planning - completed weekly on Sundays
       if (i % 7 === 0 && i < 28) {
         completions.push({
           habitId: "7",
           date: dateStr,
           completed: true,
-          completedAt: date.toISOString()
+          completedAt: date.toISOString(),
         });
       }
-      
+
       // Habit 8: Budget Review - completed monthly
       if (this.isFirstDayOfMonth(date) && i < 60) {
         completions.push({
           habitId: "8",
           date: dateStr,
           completed: true,
-          completedAt: date.toISOString()
+          completedAt: date.toISOString(),
         });
       }
-      
+
       // Habit 9: Yoga - partially completed (8 out of 30 days)
       if (i < 8 && this.isDateInCurrentMonth(date)) {
         completions.push({
           habitId: "9",
           date: dateStr,
           completed: true,
-          completedAt: date.toISOString()
+          completedAt: date.toISOString(),
         });
       }
     }
-    
+
     return completions;
   }
 
@@ -761,8 +769,8 @@ class DataService {
    */
   private formatDate(date: Date): string {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
 
@@ -789,14 +797,15 @@ class DataService {
    */
   private validateData(data: unknown): data is StoredData {
     return (
-      typeof data === 'object' &&
+      typeof data === "object" &&
       data !== null &&
-      'habits' in data &&
-      'userProfile' in data &&
-      'lastSync' in data &&
-      'version' in data &&
+      "habits" in data &&
+      "userProfile" in data &&
+      "lastSync" in data &&
+      "version" in data &&
       Array.isArray((data as StoredData).habits) &&
-      ((data as StoredData).userProfile === null || typeof (data as StoredData).userProfile === 'object')
+      ((data as StoredData).userProfile === null ||
+        typeof (data as StoredData).userProfile === "object")
     );
   }
 

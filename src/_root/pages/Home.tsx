@@ -3,13 +3,7 @@ import { useOutletContext } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import {
-  Calendar,
-  ChevronLeft,
-  ChevronRight,
-  Plus,
-  TrendingUp,
-} from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Plus, TrendingUp } from "lucide-react";
 import { HabitCard } from "@/components/shared/HabitCard";
 import type { Habit, HabitWithCompletion, HabitCompletion } from "@/types";
 import { AddEditHabit } from "@/components/shared/addEditHabit";
@@ -79,32 +73,25 @@ const Home = () => {
           const normalizedSelectedDate = new Date(
             selectedDateObj.getFullYear(),
             selectedDateObj.getMonth(),
-            selectedDateObj.getDate()
+            selectedDateObj.getDate(),
           );
           const normalizedStartDate = new Date(
             startDate.getFullYear(),
             startDate.getMonth(),
-            startDate.getDate()
+            startDate.getDate(),
           );
           const normalizedEndDate = endDate
-            ? new Date(
-                endDate.getFullYear(),
-                endDate.getMonth(),
-                endDate.getDate()
-              )
+            ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
             : null;
 
           // Check if habit should be active on this date
           const isAfterStart = normalizedSelectedDate >= normalizedStartDate;
-          const isBeforeEnd =
-            !normalizedEndDate || normalizedSelectedDate <= normalizedEndDate;
+          const isBeforeEnd = !normalizedEndDate || normalizedSelectedDate <= normalizedEndDate;
 
           return isAfterStart && isBeforeEnd;
         })
         .map((habit) => {
-          const completion = completions.find(
-            (c) => c.habitId === habit.id && c.date === dateStr
-          );
+          const completion = completions.find((c) => c.habitId === habit.id && c.date === dateStr);
 
           // Use the actual completion status from completions array
           const isCompleted = completion?.completed || false;
@@ -119,7 +106,7 @@ const Home = () => {
           };
         });
     },
-    [habits, completions]
+    [habits, completions],
   );
 
   // Calculate streak for a habit up to a specific date - FIXED VERSION
@@ -132,10 +119,8 @@ const Home = () => {
       const checkDate = new Date(dateObj);
       checkDate.setDate(checkDate.getDate() - i);
       const checkDateStr = formatDate(checkDate);
-      
-      const completion = completions.find(
-        (c) => c.habitId === habitId && c.date === checkDateStr
-      );
+
+      const completion = completions.find((c) => c.habitId === habitId && c.date === checkDateStr);
 
       if (completion?.completed) {
         streak++;
@@ -154,8 +139,7 @@ const Home = () => {
   // Calculate stats
   const completedToday = todayHabits.filter((habit) => habit.completed).length;
   const totalHabits = todayHabits.length;
-  const completionRate =
-    totalHabits > 0 ? (completedToday / totalHabits) * 100 : 0;
+  const completionRate = totalHabits > 0 ? (completedToday / totalHabits) * 100 : 0;
 
   // Date navigation functions
   const navigateDate = (direction: "prev" | "next") => {
@@ -177,18 +161,16 @@ const Home = () => {
     async (id: string) => {
       try {
         const dateStr = formatDate(selectedDate);
-        
+
         console.log(`Toggling habit ${id} for date ${dateStr}`);
 
         // Use the data service to toggle completion
         const updatedCompletion = await dataService.toggleHabitCompletionForDate(id, dateStr);
 
         // Update local completions state
-        setCompletions(prev => {
-          const existingIndex = prev.findIndex(
-            c => c.habitId === id && c.date === dateStr
-          );
-          
+        setCompletions((prev) => {
+          const existingIndex = prev.findIndex((c) => c.habitId === id && c.date === dateStr);
+
           if (existingIndex !== -1) {
             const newCompletions = [...prev];
             newCompletions[existingIndex] = updatedCompletion;
@@ -203,17 +185,14 @@ const Home = () => {
         setHabits(updatedHabits);
 
         toast.success(
-          updatedCompletion.completed 
-            ? "Habit marked as completed!" 
-            : "Habit marked as incomplete"
+          updatedCompletion.completed ? "Habit marked as completed!" : "Habit marked as incomplete",
         );
-
       } catch (error) {
         console.error("Error toggling habit:", error);
         toast.error("Failed to update habit");
       }
     },
-    [selectedDate, setHabits]
+    [selectedDate, setHabits],
   );
 
   // Handle habit edit
@@ -238,14 +217,10 @@ const Home = () => {
       await dataService.deleteHabit(habitToDelete.id);
 
       const deletedHabitName = habitToDelete.name;
-      setHabits((prevHabits) =>
-        prevHabits.filter((habit) => habit.id !== habitToDelete.id)
-      );
+      setHabits((prevHabits) => prevHabits.filter((habit) => habit.id !== habitToDelete.id));
 
       // Also remove related completions from local state
-      setCompletions(prev => 
-        prev.filter(c => c.habitId !== habitToDelete.id)
-      );
+      setCompletions((prev) => prev.filter((c) => c.habitId !== habitToDelete.id));
 
       toast.success("Habit deleted successfully!", {
         description: `"${deletedHabitName}" has been removed from your habits.`,
@@ -257,8 +232,7 @@ const Home = () => {
     } catch (error) {
       console.error("Error deleting habit:", error);
       toast.error("Failed to delete habit", {
-        description:
-          "There was an error deleting your habit. Please try again.",
+        description: "There was an error deleting your habit. Please try again.",
         duration: 3000,
       });
     } finally {
@@ -281,10 +255,10 @@ const Home = () => {
 
         setHabits((prevHabits) =>
           prevHabits.map((habit) =>
-            habit.id === editingHabit.id ? { ...habit, ...habitData } : habit
-          )
+            habit.id === editingHabit.id ? { ...habit, ...habitData } : habit,
+          ),
         );
-        
+
         toast.success("Habit updated successfully!");
       } else {
         // Create new habit
@@ -297,8 +271,7 @@ const Home = () => {
           color: habitData.color || "#0D9488",
           frequencyType: habitData.frequencyType || "Daily",
           targetCount: habitData.targetCount || 1,
-          startDate:
-            habitData.startDate || new Date().toISOString().split("T")[0],
+          startDate: habitData.startDate || new Date().toISOString().split("T")[0],
           endDate: habitData.endDate,
           priorityLevel: habitData.priorityLevel || "Medium",
           reminderTime: habitData.reminderTime,
@@ -309,10 +282,10 @@ const Home = () => {
 
         await dataService.addHabit(newHabit);
         setHabits((prevHabits) => [...prevHabits, newHabit]);
-        
+
         toast.success("Habit created successfully!");
       }
-      
+
       setIsModalOpen(false);
       setEditingHabit(null);
     } catch (error) {
@@ -336,8 +309,7 @@ const Home = () => {
         weekday: "long",
         month: "long",
         day: "numeric",
-        year:
-          date.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+        year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
       });
     }
   };
@@ -371,9 +343,7 @@ const Home = () => {
           <div className="flex items-center gap-3">
             <Calendar className="w-5 h-5 text-muted-foreground" />
             <div className="text-center">
-              <h3 className="text-foreground">
-                {formatDisplayDate(selectedDate)}
-              </h3>
+              <h3 className="text-foreground">{formatDisplayDate(selectedDate)}</h3>
               <p className="text-xs text-muted-foreground">
                 {selectedDate.toLocaleDateString("en-US", {
                   month: "long",
@@ -440,9 +410,7 @@ const Home = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Active Streaks</p>
-              <h2 className="mt-1">
-                {todayHabits.filter((h) => h.streak > 0).length}
-              </h2>
+              <h2 className="mt-1">{todayHabits.filter((h) => h.streak > 0).length}</h2>
             </div>
             <div className="w-12 h-12 rounded-full bg-chart-4/20 flex items-center justify-center text-xl">
               🔥

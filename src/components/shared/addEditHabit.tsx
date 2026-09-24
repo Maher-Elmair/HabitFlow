@@ -21,21 +21,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import dayjs from "dayjs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDropzone } from "react-dropzone";
-import { toast } from "sonner"; 
-import type {
-  AddEditHabitModalProps,
-  Habit,
-  FrequencyType,
-  PriorityLevel,
-} from "@/types";
+import { toast } from "sonner";
+import type { AddEditHabitModalProps, Habit, FrequencyType, PriorityLevel } from "@/types";
 
 const PRESET_COLORS: string[] = [
   "#0D9488",
@@ -90,7 +81,7 @@ export function AddEditHabit({
   // React Dropzone for handling image uploads
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp']
+      "image/*": [".jpeg", ".jpg", ".png", ".gif", ".webp"],
     },
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024, // 5MB
@@ -176,8 +167,8 @@ export function AddEditHabit({
 
     onSave(habitData);
     resetForm();
-    
-    // save successful message 
+
+    // save successful message
     if (habit) {
       toast.success("Habit updated successfully!", {
         description: `"${name.trim()}" has been updated.`,
@@ -189,7 +180,7 @@ export function AddEditHabit({
         duration: 3000,
       });
     }
-    
+
     onClose();
   };
 
@@ -205,8 +196,8 @@ export function AddEditHabit({
   };
 
   // Function to handle date selection
-  const handleDateSelect = (date: Date | undefined, type: 'start' | 'end') => {
-    if (type === 'start') {
+  const handleDateSelect = (date: Date | undefined, type: "start" | "end") => {
+    if (type === "start") {
       setStartDate(date);
       setIsCalendarOpen(false);
     } else {
@@ -237,9 +228,7 @@ export function AddEditHabit({
               <Input
                 id="name"
                 value={name}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setName(e.target.value)
-                }
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setName(e.target.value)}
                 placeholder="e.g., Morning meditation"
                 className="bg-background border-border rounded-lg"
               />
@@ -249,21 +238,18 @@ export function AddEditHabit({
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <Label htmlFor="description" className="text-sm">
-                  Description{" "}
-                  <span className="text-muted-foreground text-xs">
-                    (Optional)
-                  </span>
+                  Description <span className="text-muted-foreground text-xs">(Optional)</span>
                 </Label>
-                <span className={`text-xs ${description.length > MAX_DESCRIPTION_LENGTH ? 'text-destructive' : 'text-muted-foreground'}`}>
+                <span
+                  className={`text-xs ${description.length > MAX_DESCRIPTION_LENGTH ? "text-destructive" : "text-muted-foreground"}`}
+                >
                   {description.length}/{MAX_DESCRIPTION_LENGTH}
                 </span>
               </div>
               <Textarea
                 id="description"
                 value={description}
-                onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                  setDescription(e.target.value)
-                }
+                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setDescription(e.target.value)}
                 placeholder="Add a short description or motivation..."
                 className="bg-background border-border rounded-lg resize-none min-h-[100px]"
                 maxLength={MAX_DESCRIPTION_LENGTH}
@@ -316,9 +302,7 @@ export function AddEditHabit({
                   <input
                     type="color"
                     value={color}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                      setColor(e.target.value)
-                    }
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setColor(e.target.value)}
                     className="w-8 h-8 rounded-lg cursor-pointer border border-border"
                     aria-label="Custom color picker"
                   />
@@ -335,12 +319,9 @@ export function AddEditHabit({
             {/* Unified Image Section */}
             <div className="space-y-2">
               <Label className="text-sm">
-                Habit Image{" "}
-                <span className="text-muted-foreground text-xs">
-                  (Optional)
-                </span>
+                Habit Image <span className="text-muted-foreground text-xs">(Optional)</span>
               </Label>
-              
+
               <div className="space-y-4">
                 {/* Image URL Input */}
                 <div className="space-y-2">
@@ -415,9 +396,7 @@ export function AddEditHabit({
                         ? "Drop the image here..."
                         : "Drag & drop an image here, or click to select"}
                     </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      PNG, JPG, GIF up to 5MB
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">PNG, JPG, GIF up to 5MB</p>
                   </div>
                 )}
               </div>
@@ -430,9 +409,7 @@ export function AddEditHabit({
               </Label>
               <Select
                 value={frequencyType}
-                onValueChange={(value) =>
-                  setFrequencyType(value as FrequencyType)
-                }
+                onValueChange={(value) => setFrequencyType(value as FrequencyType)}
               >
                 <SelectTrigger className="bg-background border-border rounded-lg">
                   <SelectValue />
@@ -461,9 +438,7 @@ export function AddEditHabit({
                 type="number"
                 min="1"
                 value={targetCount}
-                onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                  setTargetCount(e.target.value)
-                }
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setTargetCount(e.target.value)}
                 placeholder="1"
                 className="bg-background border-border rounded-lg"
               />
@@ -482,23 +457,19 @@ export function AddEditHabit({
                     className="w-full justify-start text-left bg-background border-border rounded-lg"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? (
-                      dayjs(startDate).format("MMMM D, YYYY")
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
+                    {startDate ? dayjs(startDate).format("MMMM D, YYYY") : <span>Pick a date</span>}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent 
-                  className="w-auto p-0 rounded-lg" 
+                <PopoverContent
+                  className="w-auto p-0 rounded-lg"
                   align="start"
                   ref={calendarRef}
-                  style={{ maxWidth: 'calc(100vw - 2rem)' }}
+                  style={{ maxWidth: "calc(100vw - 2rem)" }}
                 >
                   <Calendar
                     mode="single"
                     selected={startDate}
-                    onSelect={(date) => handleDateSelect(date, 'start')}
+                    onSelect={(date) => handleDateSelect(date, "start")}
                     initialFocus
                     className="w-[280px] max-w-full"
                   />
@@ -509,10 +480,7 @@ export function AddEditHabit({
             {/* End Date */}
             <div className="space-y-2">
               <Label className="text-sm">
-                End Date{" "}
-                <span className="text-muted-foreground text-xs">
-                  (Optional)
-                </span>
+                End Date <span className="text-muted-foreground text-xs">(Optional)</span>
               </Label>
               <Popover open={isEndCalendarOpen} onOpenChange={setIsEndCalendarOpen}>
                 <PopoverTrigger asChild>
@@ -528,15 +496,15 @@ export function AddEditHabit({
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent 
-                  className="w-auto p-0 rounded-lg" 
+                <PopoverContent
+                  className="w-auto p-0 rounded-lg"
                   align="start"
-                  style={{ maxWidth: 'calc(100vw - 2rem)' }}
+                  style={{ maxWidth: "calc(100vw - 2rem)" }}
                 >
                   <Calendar
                     mode="single"
                     selected={endDate}
-                    onSelect={(date) => handleDateSelect(date, 'end')}
+                    onSelect={(date) => handleDateSelect(date, "end")}
                     disabled={(date) => (startDate ? date < startDate : false)}
                     initialFocus
                     className="w-[280px] max-w-full"
@@ -562,9 +530,7 @@ export function AddEditHabit({
               </Label>
               <Select
                 value={priorityLevel}
-                onValueChange={(value) =>
-                  setPriorityLevel(value as PriorityLevel)
-                }
+                onValueChange={(value) => setPriorityLevel(value as PriorityLevel)}
               >
                 <SelectTrigger className="bg-background border-border rounded-lg">
                   <SelectValue />
@@ -595,10 +561,7 @@ export function AddEditHabit({
             {/* Reminder Time */}
             <div className="space-y-2">
               <Label htmlFor="reminderTime" className="text-sm">
-                Reminder Time{" "}
-                <span className="text-muted-foreground text-xs">
-                  (Optional)
-                </span>
+                Reminder Time <span className="text-muted-foreground text-xs">(Optional)</span>
               </Label>
               <div className="relative">
                 <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -606,9 +569,7 @@ export function AddEditHabit({
                   id="reminderTime"
                   type="time"
                   value={reminderTime}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                    setReminderTime(e.target.value)
-                  }
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setReminderTime(e.target.value)}
                   className="bg-background border-border rounded-lg pl-10"
                 />
               </div>
@@ -623,11 +584,7 @@ export function AddEditHabit({
 
         {/* Actions */}
         <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0 px-6 py-4 border-t border-border">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="w-full sm:w-auto"
-          >
+          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
             Cancel
           </Button>
           <Button

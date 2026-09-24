@@ -1,14 +1,31 @@
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
-import { Award, Flame, Target, TrendingUp, Calendar, Zap, Star, Trophy, Activity } from "lucide-react";
-import { useOutletContext } from "react-router";
 import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
+  Award,
+  Flame,
+  Target,
+  TrendingUp,
+  Calendar,
+  Zap,
+  Star,
+  Trophy,
+  Activity,
+} from "lucide-react";
+import { useOutletContext } from "react-router";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+} from "recharts";
 import type { Habit, HabitCompletion } from "@/types";
 import { dataService } from "@/services/dataService";
 import { useEffect, useState } from "react";
@@ -43,7 +60,7 @@ const Analytics = () => {
 
   // Calculate today's date for accurate daily calculations
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = today.toISOString().split("T")[0];
 
   // Helper function to format date as YYYY-MM-DD
   const formatDate = (date: Date): string => {
@@ -55,14 +72,20 @@ const Analytics = () => {
 
   // Calculate habits active today - FIXED: More accurate calculation
   const getActiveHabitsToday = () => {
-    return habits.filter(habit => {
+    return habits.filter((habit) => {
       const startDate = new Date(habit.startDate || "2025-01-01");
       const endDate = habit.endDate ? new Date(habit.endDate) : null;
 
       // Normalize dates for comparison
       const normalizedToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-      const normalizedEndDate = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
+      const normalizedStartDate = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate(),
+      );
+      const normalizedEndDate = endDate
+        ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+        : null;
 
       const isAfterStart = normalizedToday >= normalizedStartDate;
       const isBeforeEnd = !normalizedEndDate || normalizedToday <= normalizedEndDate;
@@ -76,20 +99,20 @@ const Analytics = () => {
   const totalActiveHabitsToday = activeHabitsToday.length;
 
   // Calculate today's completed habits - FIXED: Use completions data instead of habit.completed
-  const completedToday = completions.filter(comp => 
-    comp.date === todayStr && comp.completed
+  const completedToday = completions.filter(
+    (comp) => comp.date === todayStr && comp.completed,
   ).length;
 
   // Calculate completion rate for today - FIXED: Use active habits today as denominator
-  const completionRateToday = totalActiveHabitsToday > 0 
-    ? Math.round((completedToday / totalActiveHabitsToday) * 100) 
-    : 0;
+  const completionRateToday =
+    totalActiveHabitsToday > 0 ? Math.round((completedToday / totalActiveHabitsToday) * 100) : 0;
 
   // Calculate streaks - FIXED: More accurate streak calculation
   const streaks = habits.map((habit) => habit.streak || 0);
   const bestStreak = Math.max(...streaks, 0);
-  const averageStreak = streaks.length > 0 ? Math.round(streaks.reduce((a, b) => a + b, 0) / streaks.length) : 0;
-  const activeStreaks = streaks.filter(streak => streak > 0).length;
+  const averageStreak =
+    streaks.length > 0 ? Math.round(streaks.reduce((a, b) => a + b, 0) / streaks.length) : 0;
+  const activeStreaks = streaks.filter((streak) => streak > 0).length;
 
   // Calculate weekly consistency - FIXED: More accurate calculation
   const getLast7DaysCompletions = () => {
@@ -100,9 +123,7 @@ const Analytics = () => {
       last7Days.push(formatDate(date));
     }
 
-    return completions.filter((comp) => 
-      last7Days.includes(comp.date) && comp.completed
-    );
+    return completions.filter((comp) => last7Days.includes(comp.date) && comp.completed);
   };
 
   const last7DaysCompletions = getLast7DaysCompletions();
@@ -114,18 +135,29 @@ const Analytics = () => {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = formatDate(date);
-      
-      const activeHabitsOnDate = habits.filter(habit => {
+
+      const activeHabitsOnDate = habits.filter((habit) => {
         const startDate = new Date(habit.startDate || "2025-01-01");
         const endDate = habit.endDate ? new Date(habit.endDate) : null;
         const checkDate = new Date(dateStr + "T00:00:00");
 
-        const normalizedCheckDate = new Date(checkDate.getFullYear(), checkDate.getMonth(), checkDate.getDate());
-        const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-        const normalizedEndDate = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
+        const normalizedCheckDate = new Date(
+          checkDate.getFullYear(),
+          checkDate.getMonth(),
+          checkDate.getDate(),
+        );
+        const normalizedStartDate = new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate(),
+        );
+        const normalizedEndDate = endDate
+          ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+          : null;
 
-        const isActive = normalizedCheckDate >= normalizedStartDate && 
-                        (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
+        const isActive =
+          normalizedCheckDate >= normalizedStartDate &&
+          (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
 
         return isActive;
       }).length;
@@ -136,9 +168,10 @@ const Analytics = () => {
   };
 
   const totalPossibleCompletionsLast7Days = getTotalPossibleCompletionsLast7Days();
-  const weeklyConsistency = totalPossibleCompletionsLast7Days > 0
-    ? Math.round((last7DaysCompletions.length / totalPossibleCompletionsLast7Days) * 100)
-    : 0;
+  const weeklyConsistency =
+    totalPossibleCompletionsLast7Days > 0
+      ? Math.round((last7DaysCompletions.length / totalPossibleCompletionsLast7Days) * 100)
+      : 0;
 
   // Calculate monthly consistency - FIXED: More accurate calculation
   const getLast30DaysCompletions = () => {
@@ -149,9 +182,7 @@ const Analytics = () => {
       last30Days.push(formatDate(date));
     }
 
-    return completions.filter((comp) => 
-      last30Days.includes(comp.date) && comp.completed
-    );
+    return completions.filter((comp) => last30Days.includes(comp.date) && comp.completed);
   };
 
   const last30DaysCompletions = getLast30DaysCompletions();
@@ -163,18 +194,29 @@ const Analytics = () => {
       const date = new Date();
       date.setDate(date.getDate() - i);
       const dateStr = formatDate(date);
-      
-      const activeHabitsOnDate = habits.filter(habit => {
+
+      const activeHabitsOnDate = habits.filter((habit) => {
         const startDate = new Date(habit.startDate || "2025-01-01");
         const endDate = habit.endDate ? new Date(habit.endDate) : null;
         const checkDate = new Date(dateStr + "T00:00:00");
 
-        const normalizedCheckDate = new Date(checkDate.getFullYear(), checkDate.getMonth(), checkDate.getDate());
-        const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-        const normalizedEndDate = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
+        const normalizedCheckDate = new Date(
+          checkDate.getFullYear(),
+          checkDate.getMonth(),
+          checkDate.getDate(),
+        );
+        const normalizedStartDate = new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate(),
+        );
+        const normalizedEndDate = endDate
+          ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+          : null;
 
-        const isActive = normalizedCheckDate >= normalizedStartDate && 
-                        (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
+        const isActive =
+          normalizedCheckDate >= normalizedStartDate &&
+          (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
 
         return isActive;
       }).length;
@@ -185,15 +227,18 @@ const Analytics = () => {
   };
 
   const totalPossibleCompletionsLast30Days = getTotalPossibleCompletionsLast30Days();
-  const monthlyConsistency = totalPossibleCompletionsLast30Days > 0
-    ? Math.round((last30DaysCompletions.length / totalPossibleCompletionsLast30Days) * 100)
-    : 0;
+  const monthlyConsistency =
+    totalPossibleCompletionsLast30Days > 0
+      ? Math.round((last30DaysCompletions.length / totalPossibleCompletionsLast30Days) * 100)
+      : 0;
 
   // Calculate total completion time (estimate based on habit frequency)
   const totalCompletionTime = habits.reduce((total, habit) => {
-    const habitCompletions = completions.filter(c => c.habitId === habit.id && c.completed).length;
+    const habitCompletions = completions.filter(
+      (c) => c.habitId === habit.id && c.completed,
+    ).length;
     // Estimate 15 minutes per completion
-    return total + (habitCompletions * 15);
+    return total + habitCompletions * 15;
   }, 0);
 
   // Generate realistic weekly data based on actual completions - FIXED: More accurate
@@ -209,21 +254,32 @@ const Analytics = () => {
 
       // Count completions for that day
       const dayCompletions = completions.filter(
-        (comp) => comp.date === dateStr && comp.completed
+        (comp) => comp.date === dateStr && comp.completed,
       ).length;
 
       // Count active habits for that day
-      const activeHabitsOnDate = habits.filter(habit => {
+      const activeHabitsOnDate = habits.filter((habit) => {
         const startDate = new Date(habit.startDate || "2025-01-01");
         const endDate = habit.endDate ? new Date(habit.endDate) : null;
         const checkDate = new Date(dateStr + "T00:00:00");
 
-        const normalizedCheckDate = new Date(checkDate.getFullYear(), checkDate.getMonth(), checkDate.getDate());
-        const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-        const normalizedEndDate = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
+        const normalizedCheckDate = new Date(
+          checkDate.getFullYear(),
+          checkDate.getMonth(),
+          checkDate.getDate(),
+        );
+        const normalizedStartDate = new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate(),
+        );
+        const normalizedEndDate = endDate
+          ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+          : null;
 
-        const isActive = normalizedCheckDate >= normalizedStartDate && 
-                        (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
+        const isActive =
+          normalizedCheckDate >= normalizedStartDate &&
+          (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
 
         return isActive;
       }).length;
@@ -241,39 +297,52 @@ const Analytics = () => {
   const getMonthlyTrendData = () => {
     const months = [];
     const today = new Date();
-    
+
     for (let i = 5; i >= 0; i--) {
       const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
-      const monthName = date.toLocaleDateString('en-US', { month: 'short' });
+      const monthName = date.toLocaleDateString("en-US", { month: "short" });
       const year = date.getFullYear();
-      
+
       // Count completions for this month
-      const monthCompletions = completions.filter(comp => {
+      const monthCompletions = completions.filter((comp) => {
         const compDate = new Date(comp.date);
-        return comp.completed && 
-               compDate.getMonth() === date.getMonth() && 
-               compDate.getFullYear() === date.getFullYear();
+        return (
+          comp.completed &&
+          compDate.getMonth() === date.getMonth() &&
+          compDate.getFullYear() === date.getFullYear()
+        );
       }).length;
 
       // Count total possible completions for this month
       let totalPossibleCompletions = 0;
       const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
-      
+
       for (let day = 1; day <= daysInMonth; day++) {
         const currentDate = new Date(date.getFullYear(), date.getMonth(), day);
         const dateStr = formatDate(currentDate);
-        
-        const activeHabitsOnDate = habits.filter(habit => {
+
+        const activeHabitsOnDate = habits.filter((habit) => {
           const startDate = new Date(habit.startDate || "2025-01-01");
           const endDate = habit.endDate ? new Date(habit.endDate) : null;
           const checkDate = new Date(dateStr + "T00:00:00");
 
-          const normalizedCheckDate = new Date(checkDate.getFullYear(), checkDate.getMonth(), checkDate.getDate());
-          const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-          const normalizedEndDate = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
+          const normalizedCheckDate = new Date(
+            checkDate.getFullYear(),
+            checkDate.getMonth(),
+            checkDate.getDate(),
+          );
+          const normalizedStartDate = new Date(
+            startDate.getFullYear(),
+            startDate.getMonth(),
+            startDate.getDate(),
+          );
+          const normalizedEndDate = endDate
+            ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+            : null;
 
-          const isActive = normalizedCheckDate >= normalizedStartDate && 
-                          (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
+          const isActive =
+            normalizedCheckDate >= normalizedStartDate &&
+            (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
 
           return isActive;
         }).length;
@@ -281,18 +350,19 @@ const Analytics = () => {
         totalPossibleCompletions += activeHabitsOnDate;
       }
 
-      const consistency = totalPossibleCompletions > 0 
-        ? Math.round((monthCompletions / totalPossibleCompletions) * 100)
-        : 0;
+      const consistency =
+        totalPossibleCompletions > 0
+          ? Math.round((monthCompletions / totalPossibleCompletions) * 100)
+          : 0;
 
       months.push({
         month: `${monthName} '${String(year).slice(2)}`,
         completions: monthCompletions,
         possible: totalPossibleCompletions,
-        consistency: consistency
+        consistency: consistency,
       });
     }
-    
+
     return months;
   };
 
@@ -317,60 +387,68 @@ const Analytics = () => {
   }, {});
 
   // Calculate completion rate by category - FIXED: More accurate
-  const categoryCompletion = Object.entries(categoryData).map(
-    ([category, categoryHabits]) => {
-      const totalCompletions = completions.filter((c) =>
-        categoryHabits.some((h) => h.id === c.habitId && c.completed)
-      ).length;
+  const categoryCompletion = Object.entries(categoryData).map(([category, categoryHabits]) => {
+    const totalCompletions = completions.filter((c) =>
+      categoryHabits.some((h) => h.id === c.habitId && c.completed),
+    ).length;
 
-      // Calculate total possible completions for these habits
-      let totalPossibleCompletions = 0;
-      const last30Days: string[] = [];
-      for (let i = 0; i < 30; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        last30Days.push(formatDate(date));
-      }
+    // Calculate total possible completions for these habits
+    let totalPossibleCompletions = 0;
+    const last30Days: string[] = [];
+    for (let i = 0; i < 30; i++) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      last30Days.push(formatDate(date));
+    }
 
-      last30Days.forEach(dateStr => {
-        const activeHabitsOnDate = categoryHabits.filter(habit => {
-          const startDate = new Date(habit.startDate || "2025-01-01");
-          const endDate = habit.endDate ? new Date(habit.endDate) : null;
-          const checkDate = new Date(dateStr + "T00:00:00");
+    last30Days.forEach((dateStr) => {
+      const activeHabitsOnDate = categoryHabits.filter((habit) => {
+        const startDate = new Date(habit.startDate || "2025-01-01");
+        const endDate = habit.endDate ? new Date(habit.endDate) : null;
+        const checkDate = new Date(dateStr + "T00:00:00");
 
-          const normalizedCheckDate = new Date(checkDate.getFullYear(), checkDate.getMonth(), checkDate.getDate());
-          const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-          const normalizedEndDate = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
+        const normalizedCheckDate = new Date(
+          checkDate.getFullYear(),
+          checkDate.getMonth(),
+          checkDate.getDate(),
+        );
+        const normalizedStartDate = new Date(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate(),
+        );
+        const normalizedEndDate = endDate
+          ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+          : null;
 
-          const isActive = normalizedCheckDate >= normalizedStartDate && 
-                          (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
+        const isActive =
+          normalizedCheckDate >= normalizedStartDate &&
+          (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
 
-          return isActive;
-        }).length;
+        return isActive;
+      }).length;
 
-        totalPossibleCompletions += activeHabitsOnDate;
-      });
+      totalPossibleCompletions += activeHabitsOnDate;
+    });
 
-      const consistency = totalPossibleCompletions > 0 
+    const consistency =
+      totalPossibleCompletions > 0
         ? Math.round((totalCompletions / totalPossibleCompletions) * 100)
         : 0;
 
-      return {
-        category,
-        totalCompletions,
-        totalPossibleCompletions,
-        consistency: consistency,
-        habitCount: categoryHabits.length
-      };
-    }
-  );
+    return {
+      category,
+      totalCompletions,
+      totalPossibleCompletions,
+      consistency: consistency,
+      habitCount: categoryHabits.length,
+    };
+  });
 
   // Calculate habit performance ranking - FIXED: More accurate
   const habitPerformance = habits
     .map((habit) => {
-      const habitCompletions = completions.filter(
-        (c) => c.habitId === habit.id && c.completed
-      );
+      const habitCompletions = completions.filter((c) => c.habitId === habit.id && c.completed);
 
       // Calculate total possible completions for this habit in last 30 days
       let totalPossibleCompletions = 0;
@@ -378,18 +456,30 @@ const Analytics = () => {
         const date = new Date();
         date.setDate(date.getDate() - i);
         const dateStr = formatDate(date);
-        
+
         const isActiveOnDate = (() => {
           const startDate = new Date(habit.startDate || "2025-01-01");
           const endDate = habit.endDate ? new Date(habit.endDate) : null;
           const checkDate = new Date(dateStr + "T00:00:00");
 
-          const normalizedCheckDate = new Date(checkDate.getFullYear(), checkDate.getMonth(), checkDate.getDate());
-          const normalizedStartDate = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate());
-          const normalizedEndDate = endDate ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate()) : null;
+          const normalizedCheckDate = new Date(
+            checkDate.getFullYear(),
+            checkDate.getMonth(),
+            checkDate.getDate(),
+          );
+          const normalizedStartDate = new Date(
+            startDate.getFullYear(),
+            startDate.getMonth(),
+            startDate.getDate(),
+          );
+          const normalizedEndDate = endDate
+            ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
+            : null;
 
-          return normalizedCheckDate >= normalizedStartDate && 
-                 (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
+          return (
+            normalizedCheckDate >= normalizedStartDate &&
+            (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate)
+          );
         })();
 
         if (isActiveOnDate) {
@@ -397,13 +487,13 @@ const Analytics = () => {
         }
       }
 
-      const completionRate = totalPossibleCompletions > 0 
-        ? Math.round((habitCompletions.length / totalPossibleCompletions) * 100)
-        : 0;
+      const completionRate =
+        totalPossibleCompletions > 0
+          ? Math.round((habitCompletions.length / totalPossibleCompletions) * 100)
+          : 0;
 
-      const dailyAverage = habitCompletions.length > 0 
-        ? (habitCompletions.length / 30).toFixed(1)
-        : "0";
+      const dailyAverage =
+        habitCompletions.length > 0 ? (habitCompletions.length / 30).toFixed(1) : "0";
 
       return {
         ...habit,
@@ -417,22 +507,22 @@ const Analytics = () => {
 
   // Calculate streak distribution
   const streakDistribution = [
-    { range: "1-7 days", count: streaks.filter(s => s >= 1 && s <= 7).length },
-    { range: "8-30 days", count: streaks.filter(s => s >= 8 && s <= 30).length },
-    { range: "31-90 days", count: streaks.filter(s => s >= 31 && s <= 90).length },
-    { range: "90+ days", count: streaks.filter(s => s > 90).length },
+    { range: "1-7 days", count: streaks.filter((s) => s >= 1 && s <= 7).length },
+    { range: "8-30 days", count: streaks.filter((s) => s >= 8 && s <= 30).length },
+    { range: "31-90 days", count: streaks.filter((s) => s >= 31 && s <= 90).length },
+    { range: "90+ days", count: streaks.filter((s) => s > 90).length },
   ];
 
   // Calculate success rate - FIXED: More accurate
-  const successfulHabits = habitPerformance.filter(h => h.completionRate >= 70).length;
+  const successfulHabits = habitPerformance.filter((h) => h.completionRate >= 70).length;
   const successRate = totalHabits > 0 ? Math.round((successfulHabits / totalHabits) * 100) : 0;
 
   // Calculate daily average completions - FIXED: More accurate
-  const totalCompletions = completions.filter(c => c.completed).length;
+  const totalCompletions = completions.filter((c) => c.completed).length;
   const dailyAverageCompletions = totalCompletions > 0 ? (totalCompletions / 30).toFixed(1) : "0";
 
   // Pie chart colors
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
+  const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884D8"];
 
   // Custom tooltip for pie chart
   interface PieTooltipPayloadItem {
@@ -442,19 +532,22 @@ const Analytics = () => {
     color?: string;
   }
 
-  const CustomPieTooltip = ({ active, payload }: { active?: boolean; payload?: PieTooltipPayloadItem[] }) => {
+  const CustomPieTooltip = ({
+    active,
+    payload,
+  }: {
+    active?: boolean;
+    payload?: PieTooltipPayloadItem[];
+  }) => {
     if (active && payload && payload.length) {
       const data = payload[0] as PieTooltipPayloadItem;
       const totalHabitsInCategory = data.payload?.value ?? 0;
       const percentage = ((totalHabitsInCategory / totalHabits) * 100).toFixed(1);
-      
+
       return (
         <div className="bg-card border border-border rounded-xl p-4 shadow-lg backdrop-blur-sm">
           <div className="flex items-center gap-3 mb-2">
-            <div 
-              className="w-4 h-4 rounded-full" 
-              style={{ backgroundColor: data.color }}
-            />
+            <div className="w-4 h-4 rounded-full" style={{ backgroundColor: data.color }} />
             <p className="font-semibold text-foreground">{data.name}</p>
           </div>
           <div className="space-y-1 text-sm">
@@ -493,9 +586,7 @@ const Analytics = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Today's Progress</p>
-              <h2 className="mt-1 text-2xl font-bold">
-                {completionRateToday}%
-              </h2>
+              <h2 className="mt-1 text-2xl font-bold">{completionRateToday}%</h2>
               <p className="text-xs text-muted-foreground mt-1">
                 {completedToday}/{totalActiveHabitsToday} habits completed
               </p>
@@ -510,9 +601,7 @@ const Analytics = () => {
         <Card className="p-5 h-36 bg-linear-to-br from-chart-2/10 to-chart-2/5 border-chart-2/20 rounded-xl">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-muted-foreground">
-                Weekly Consistency
-              </p>
+              <p className="text-sm text-muted-foreground">Weekly Consistency</p>
               <h2 className="mt-1 text-2xl font-bold">{weeklyConsistency}%</h2>
               <p className="text-xs text-muted-foreground mt-1">
                 {last7DaysCompletions.length} completions this week
@@ -529,9 +618,7 @@ const Analytics = () => {
             <div>
               <p className="text-sm text-muted-foreground">Best Streak</p>
               <h2 className="mt-1 text-2xl font-bold">{bestStreak} days</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                {activeStreaks} active streaks
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">{activeStreaks} active streaks</p>
             </div>
             <div className="w-12 h-12 rounded-full bg-chart-4/20 flex items-center justify-center">
               <Flame className="w-6 h-6 text-chart-4" />
@@ -543,9 +630,7 @@ const Analytics = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Total Completions</p>
-              <h2 className="mt-1 text-2xl font-bold">
-                {totalCompletions}
-              </h2>
+              <h2 className="mt-1 text-2xl font-bold">{totalCompletions}</h2>
               <p className="text-xs text-muted-foreground mt-1">
                 {Math.floor(totalCompletionTime / 60)}h invested
               </p>
@@ -579,9 +664,7 @@ const Analytics = () => {
             <div>
               <p className="text-sm text-muted-foreground">Average Streak</p>
               <h2 className="mt-1 text-2xl font-bold">{averageStreak} days</h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Across all habits
-              </p>
+              <p className="text-xs text-muted-foreground mt-1">Across all habits</p>
             </div>
             <div className="w-12 h-12 rounded-full bg-green-500/20 flex items-center justify-center">
               <Zap className="w-6 h-6 text-green-500" />
@@ -593,12 +676,8 @@ const Analytics = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Success Rate</p>
-              <h2 className="mt-1 text-2xl font-bold">
-                {successRate}%
-              </h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Habits with 70%+ completion
-              </p>
+              <h2 className="mt-1 text-2xl font-bold">{successRate}%</h2>
+              <p className="text-xs text-muted-foreground mt-1">Habits with 70%+ completion</p>
             </div>
             <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center">
               <Star className="w-6 h-6 text-purple-500" />
@@ -610,12 +689,8 @@ const Analytics = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-muted-foreground">Daily Average</p>
-              <h2 className="mt-1 text-2xl font-bold">
-                {dailyAverageCompletions}
-              </h2>
-              <p className="text-xs text-muted-foreground mt-1">
-                Completions per day
-              </p>
+              <h2 className="mt-1 text-2xl font-bold">{dailyAverageCompletions}</h2>
+              <p className="text-xs text-muted-foreground mt-1">Completions per day</p>
             </div>
             <div className="w-12 h-12 rounded-full bg-orange-500/20 flex items-center justify-center">
               <Activity className="w-6 h-6 text-orange-500" />
@@ -638,10 +713,7 @@ const Analytics = () => {
             </p>
           </div>
 
-          <ChartContainer
-            config={chartConfig}
-            className="h-[300px] w-full"
-          >
+          <ChartContainer config={chartConfig} className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={weeklyData}>
                 <XAxis
@@ -658,11 +730,7 @@ const Analytics = () => {
                   axisLine={false}
                 />
                 <ChartTooltip content={<ChartTooltipContent />} cursor={false} />
-                <Bar
-                  dataKey="completed"
-                  fill="var(--color-completed)"
-                  radius={[8, 8, 0, 0]}
-                />
+                <Bar dataKey="completed" fill="var(--color-completed)" radius={[8, 8, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </ChartContainer>
@@ -680,10 +748,7 @@ const Analytics = () => {
             </p>
           </div>
 
-          <ChartContainer
-            config={trendConfig}
-            className="h-[300px] w-full"
-          >
+          <ChartContainer config={trendConfig} className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={monthlyData}>
                 <XAxis
@@ -705,7 +770,7 @@ const Analytics = () => {
                   dataKey="completions"
                   stroke="var(--color-trend)"
                   strokeWidth={3}
-                  dot={{ fill: 'var(--color-trend)', strokeWidth: 2, r: 4 }}
+                  dot={{ fill: "var(--color-trend)", strokeWidth: 2, r: 4 }}
                   activeDot={{ r: 6 }}
                 />
               </LineChart>
@@ -731,7 +796,7 @@ const Analytics = () => {
                 <Pie
                   data={Object.entries(categoryData).map(([category, habits]) => ({
                     name: category,
-                    value: habits.length
+                    value: habits.length,
                   }))}
                   cx="50%"
                   cy="50%"
@@ -753,9 +818,7 @@ const Analytics = () => {
         <Card className="p-6 bg-card border-border rounded-2xl">
           <div className="mb-5">
             <h3 className="text-lg font-semibold mb-1">Priority Distribution</h3>
-            <p className="text-sm text-muted-foreground">
-              Distribution of habit priority levels
-            </p>
+            <p className="text-sm text-muted-foreground">Distribution of habit priority levels</p>
           </div>
 
           <div className="space-y-4">
@@ -776,10 +839,7 @@ const Analytics = () => {
               const color = getPriorityColor(priority);
 
               return (
-                <div
-                  key={priority}
-                  className="p-4 bg-background/50 rounded-xl border"
-                >
+                <div key={priority} className="p-4 bg-background/50 rounded-xl border">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium" style={{ color }}>
                       {priority} Priority
@@ -829,8 +889,8 @@ const Analytics = () => {
           <div className="space-y-4">
             {streakDistribution.map((item, index) => {
               const percentage = (item.count / totalHabits) * 100;
-              const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4'];
-              
+              const colors = ["#FF6B6B", "#4ECDC4", "#45B7D1", "#96CEB4"];
+
               return (
                 <div key={item.range} className="p-4 bg-background/50 rounded-xl border">
                   <div className="flex items-center justify-between mb-2">
@@ -882,9 +942,7 @@ const Analytics = () => {
 
         {habitPerformance.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-muted-foreground">
-              Start building habits to see performance data!
-            </p>
+            <p className="text-muted-foreground">Start building habits to see performance data!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -899,8 +957,8 @@ const Analytics = () => {
                       index === 0
                         ? "bg-linear-to-br from-yellow-400 to-yellow-600"
                         : index === 1
-                        ? "bg-linear-to-br from-gray-400 to-gray-600"
-                        : "bg-linear-to-br from-orange-400 to-orange-600"
+                          ? "bg-linear-to-br from-gray-400 to-gray-600"
+                          : "bg-linear-to-br from-orange-400 to-orange-600"
                     } text-white`}
                   >
                     {index === 0 ? "🥇" : index === 1 ? "🥈" : "🥉"}
@@ -939,9 +997,7 @@ const Analytics = () => {
                         <span className="font-medium">{habit.streak || 0}d</span>
                       </div>
                       <div className="text-right">
-                        <span className="font-medium text-green-600">
-                          {habit.completionRate}%
-                        </span>
+                        <span className="font-medium text-green-600">{habit.completionRate}%</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Target className="w-3 h-3 text-blue-500" />
@@ -994,38 +1050,41 @@ const Analytics = () => {
               </div>
               <div className="p-3 bg-background/50 rounded-lg border">
                 <div className="text-muted-foreground">Success Rate</div>
-                <div className="font-semibold mt-1">
-                  {successRate}%
-                </div>
+                <div className="font-semibold mt-1">{successRate}%</div>
               </div>
               <div className="p-3 bg-background/50 rounded-lg border">
                 <div className="text-muted-foreground">Avg. Completion</div>
-                <div className="font-semibold mt-1">
-                  {monthlyConsistency}%
-                </div>
+                <div className="font-semibold mt-1">{monthlyConsistency}%</div>
               </div>
             </div>
           </div>
 
           {/* Improvement Opportunities */}
           <div className="space-y-4">
-            <h4 className="font-semibold text-sm text-muted-foreground">IMPROVEMENT OPPORTUNITIES</h4>
+            <h4 className="font-semibold text-sm text-muted-foreground">
+              IMPROVEMENT OPPORTUNITIES
+            </h4>
             <div className="space-y-3">
               {habitPerformance
-                .filter(habit => habit.completionRate < 50)
+                .filter((habit) => habit.completionRate < 50)
                 .slice(0, 3)
-                .map(habit => (
-                  <div key={habit.id} className="flex items-center justify-between p-3 bg-background/50 rounded-lg border">
+                .map((habit) => (
+                  <div
+                    key={habit.id}
+                    className="flex items-center justify-between p-3 bg-background/50 rounded-lg border"
+                  >
                     <div>
                       <div className="font-medium text-sm">{habit.name}</div>
-                      <div className="text-xs text-muted-foreground">{habit.completionRate}% completion</div>
+                      <div className="text-xs text-muted-foreground">
+                        {habit.completionRate}% completion
+                      </div>
                     </div>
                     <Badge variant="outline" className="text-xs">
                       Needs focus
                     </Badge>
                   </div>
                 ))}
-              {habitPerformance.filter(habit => habit.completionRate < 50).length === 0 && (
+              {habitPerformance.filter((habit) => habit.completionRate < 50).length === 0 && (
                 <div className="text-center py-4 text-muted-foreground text-sm">
                   Great job! All habits are performing well.
                 </div>
@@ -1047,25 +1106,28 @@ const Analytics = () => {
               {monthlyConsistency === 100 && totalHabits > 0
                 ? "Outstanding! You've achieved perfect consistency across all habits. Consider adding more challenging goals or mentoring others."
                 : monthlyConsistency >= 80
-                ? "Excellent work! You're maintaining exceptional consistency. Focus on optimizing your routine and helping habits become automatic."
-                : monthlyConsistency >= 60
-                ? "Strong progress! You're building reliable habits. Try implementing habit stacking to improve consistency further."
-                : monthlyConsistency >= 40
-                ? "Good foundation! Consistency is improving. Focus on your top 3 priorities and build momentum from there."
-                : "Every master was once a beginner. Focus on building one consistent habit at a time - small wins lead to big results."}
+                  ? "Excellent work! You're maintaining exceptional consistency. Focus on optimizing your routine and helping habits become automatic."
+                  : monthlyConsistency >= 60
+                    ? "Strong progress! You're building reliable habits. Try implementing habit stacking to improve consistency further."
+                    : monthlyConsistency >= 40
+                      ? "Good foundation! Consistency is improving. Focus on your top 3 priorities and build momentum from there."
+                      : "Every master was once a beginner. Focus on building one consistent habit at a time - small wins lead to big results."}
             </p>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
                 <span className="text-muted-foreground">Next Level Goal: </span>
                 <span className="font-medium">
-                  {monthlyConsistency < 100 ? `Reach ${Math.min(100, Math.round(monthlyConsistency) + 10)}% consistency` : "Maintain 100% streak"}
+                  {monthlyConsistency < 100
+                    ? `Reach ${Math.min(100, Math.round(monthlyConsistency) + 10)}% consistency`
+                    : "Maintain 100% streak"}
                 </span>
               </div>
               <div>
                 <span className="text-muted-foreground">Recommended Focus: </span>
                 <span className="font-medium">
-                  {habitPerformance.length > 0 && habitPerformance[habitPerformance.length - 1].name}
+                  {habitPerformance.length > 0 &&
+                    habitPerformance[habitPerformance.length - 1].name}
                 </span>
               </div>
             </div>

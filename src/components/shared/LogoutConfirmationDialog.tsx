@@ -36,23 +36,16 @@ export const LogoutConfirmationDialog = ({
             <DialogTitle>Confirm Logout</DialogTitle>
           </div>
           <DialogDescription className="pt-4">
-            Are you sure you want to log out? You will need to sign in again to access your account and track your habits.
+            Are you sure you want to log out? You will need to sign in again to access your account
+            and track your habits.
           </DialogDescription>
         </DialogHeader>
-        
+
         <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0 pt-4">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="w-full sm:w-auto"
-          >
+          <Button variant="outline" onClick={onClose} className="w-full sm:w-auto">
             Cancel
           </Button>
-          <Button
-            variant="destructive"
-            onClick={handleConfirm}
-            className="w-full sm:w-auto"
-          >
+          <Button variant="destructive" onClick={handleConfirm} className="w-full sm:w-auto">
             Yes, Logout
           </Button>
         </DialogFooter>

@@ -63,16 +63,16 @@ It helps you **build consistent habits**, **analyze progress**, and **track achi
 ```md
 HabitFlow/
 ├── src/
-│   ├── _auth/          # Authentication logic (Local Storage based)
-│   ├── _root/          # Main app pages (Home, History, Analytics, Profile)
-│   ├── components/     # Reusable UI components
-│   ├── hooks/          # Custom React hooks
-│   ├── lib/            # Storage utilities (LocalStorage)
-│   ├── services/       # Data and logic layer
-│   ├── theme/          # Theme management
-│   ├── styles/         # Global styles & animations
-│   ├── App.tsx
-│   └── App.css
+│ ├── _auth/ # Authentication logic (Local Storage based)
+│ ├── _root/ # Main app pages (Home, History, Analytics, Profile)
+│ ├── components/ # Reusable UI components
+│ ├── hooks/ # Custom React hooks
+│ ├── lib/ # Storage utilities (LocalStorage)
+│ ├── services/ # Data and logic layer
+│ ├── theme/ # Theme management
+│ ├── styles/ # Global styles & animations
+│ ├── App.tsx
+│ └── App.css
 └── vite.config.ts
 ```
 
@@ -103,25 +103,25 @@ HabitFlow/
 
 ## 🔒 Security
 
-| Feature                 | Details                                       |
-| ----------------------- | --------------------------------------------- |
-| 🔐 **Authentication**   | Local Storage based (secure for personal use) |
-| 📝 **Validation**       | Zod-based validation                          |
-| 🛡 **Protected Routes**  | Auth-protected routes                         |
-| 🔒 **Sanitization**     | XSS & input sanitization                      |
+| Feature                | Details                                       |
+| ---------------------- | --------------------------------------------- |
+| 🔐 **Authentication**  | Local Storage based (secure for personal use) |
+| 📝 **Validation**      | Zod-based validation                          |
+| 🛡 **Protected Routes** | Auth-protected routes                         |
+| 🔒 **Sanitization**    | XSS & input sanitization                      |
 
 ---
 
 ## 📈 Roadmap
 
-| Upcoming Features           | Status / Notes          |
-| ----------------------------| ----------------------- |
-|  React Native app version   | Mobile version          |
-|  Push notifications         | Habit reminders         |
-|  Habit challenges & sharing | Social features         |
-|  CSV / PDF data export      | Export habits & reports |
-|  AI habit recommendations   | Smart suggestions       |
-|  Offline PWA mode           | Full offline support    |
+| Upcoming Features          | Status / Notes          |
+| -------------------------- | ----------------------- |
+| React Native app version   | Mobile version          |
+| Push notifications         | Habit reminders         |
+| Habit challenges & sharing | Social features         |
+| CSV / PDF data export      | Export habits & reports |
+| AI habit recommendations   | Smart suggestions       |
+| Offline PWA mode           | Full offline support    |
 
 ---
 
@@ -140,10 +140,10 @@ npm run dev
 
 **Maher Elmair**
 
-* 📫 [maher.elmair.dev@gmail.com](mailto:maher.elmair.dev@gmail.com)
-* 🔗 [LinkedIn](https://www.linkedin.com/in/maher-elmair)
-* ✖️ [X (Twitter)](https://x.com/Maher_Elmair)
-* ❤️ Made with passion by [Maher Elmair](https://maher-elmair.github.io/My_Website)
+- 📫 [maher.elmair.dev@gmail.com](mailto:maher.elmair.dev@gmail.com)
+- 🔗 [LinkedIn](https://www.linkedin.com/in/maher-elmair)
+- ✖️ [X (Twitter)](https://x.com/Maher_Elmair)
+- ❤️ Made with passion by [Maher Elmair](https://maher-elmair.github.io/My_Website)
 
 ---
 

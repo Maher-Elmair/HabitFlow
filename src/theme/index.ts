@@ -527,10 +527,7 @@ export type ThemeHabit = typeof theme.habit;
 /**
  * Get color value for current theme mode
  */
-export function getThemeColor(
-  colorPath: string,
-  mode: "light" | "dark" = "light"
-): string {
+export function getThemeColor(colorPath: string, mode: "light" | "dark" = "light"): string {
   const path = colorPath.split(".");
   let value: any = theme.colors[mode];
 
@@ -544,9 +541,7 @@ export function getThemeColor(
 /**
  * Get responsive breakpoint value
  */
-export function getBreakpoint(
-  breakpoint: keyof typeof theme.breakpoints
-): string {
+export function getBreakpoint(breakpoint: keyof typeof theme.breakpoints): string {
   return theme.breakpoints[breakpoint];
 }
 
@@ -561,7 +556,7 @@ export function getAnimation(animation: keyof typeof theme.animations): string {
  * Get habit state colors
  */
 export function getHabitStateColors(
-  state: keyof typeof theme.habit.states
+  state: keyof typeof theme.habit.states,
 ): (typeof theme.habit.states)[keyof typeof theme.habit.states] {
   return theme.habit.states[state];
 }

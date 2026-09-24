@@ -26,10 +26,7 @@ export function HabitCard({
   onEdit,
   onDelete,
 }: HabitCardProps): React.JSX.Element {
-
-  const [isCompleted, setIsCompleted] = useState<boolean>(
-    habit.completed,
-  );
+  const [isCompleted, setIsCompleted] = useState<boolean>(habit.completed);
 
   // Sync with habit.completed when it changes
   useEffect(() => {
@@ -39,7 +36,7 @@ export function HabitCard({
   const handleToggle = (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    
+
     const newCompleted = !isCompleted;
     setIsCompleted(newCompleted);
     onToggle(habit.id);
@@ -78,11 +75,7 @@ export function HabitCard({
                   borderColor: habit.color || "#0D9488",
                 }}
               >
-                <img
-                  src={habit.image}
-                  alt={habit.name}
-                  className="w-full h-full object-cover"
-                />
+                <img src={habit.image} alt={habit.name} className="w-full h-full object-cover" />
               </div>
             ) : (
               <div
@@ -178,9 +171,7 @@ export function HabitCard({
                   }}
                 >
                   <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                  <span className="font-medium text-xs">
-                    {habit.streak}
-                  </span>
+                  <span className="font-medium text-xs">{habit.streak}</span>
                 </div>
               )}
             </div>
@@ -190,22 +181,12 @@ export function HabitCard({
           <div className="flex flex-col items-end gap-1 sm:gap-2 shrink-0">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg"
-                >
+                <Button variant="ghost" size="icon" className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg">
                   <MoreVertical className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align="end"
-                className="rounded-xl"
-              >
-                <DropdownMenuItem
-                  onClick={() => onEdit(habit)}
-                  className="rounded-lg"
-                >
+              <DropdownMenuContent align="end" className="rounded-xl">
+                <DropdownMenuItem onClick={() => onEdit(habit)} className="rounded-lg">
                   <Pencil className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
@@ -220,10 +201,7 @@ export function HabitCard({
             </DropdownMenu>
 
             {/* FIX: Wrap Switch in a div with event handlers */}
-            <div 
-              onClick={handleToggle}
-              className="cursor-pointer"
-            >
+            <div onClick={handleToggle} className="cursor-pointer">
               <Switch
                 checked={isCompleted}
                 onCheckedChange={() => {}} // Empty function since we handle click manually

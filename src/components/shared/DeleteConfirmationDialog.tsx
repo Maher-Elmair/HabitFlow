@@ -37,7 +37,7 @@ export function DeleteConfirmationDialog({
 
   // Default values for single habit deletion
   const dialogTitle = title || "Delete Habit";
-  
+
   // For single habit deletion, show habit name prominently
   // For bulk deletion, use the provided description
   const dialogDescription = description || (
@@ -46,7 +46,8 @@ export function DeleteConfirmationDialog({
       <span className="font-medium text-foreground bg-muted/50 px-2 py-1 rounded-md  ">
         {habitName || "this habit"}
       </span>
-      ? This will permanently remove the habit and all its tracking data. This action cannot be undone.
+      ? This will permanently remove the habit and all its tracking data. This action cannot be
+      undone.
     </>
   );
 
@@ -62,11 +63,9 @@ export function DeleteConfirmationDialog({
             </div>
             <DialogTitle>{dialogTitle}</DialogTitle>
           </div>
-          <DialogDescription className="pt-4 text-base">
-            {dialogDescription}
-          </DialogDescription>
+          <DialogDescription className="pt-4 text-base">{dialogDescription}</DialogDescription>
         </DialogHeader>
-        
+
         <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:gap-0 pt-4">
           <Button
             variant="outline"

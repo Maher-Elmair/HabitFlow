@@ -28,7 +28,7 @@ const ProtectedRootLayout = () => {
         const savedHabits = await dataService.getHabits();
         setHabits(savedHabits);
       } catch (error) {
-        console.error('Error loading habits:', error);
+        console.error("Error loading habits:", error);
         // If there's an error, habits will remain as empty array
       } finally {
         setLoading(false);
@@ -49,7 +49,7 @@ const ProtectedRootLayout = () => {
         try {
           await dataService.saveHabits(habits);
         } catch (error) {
-          console.error('Error saving habits:', error);
+          console.error("Error saving habits:", error);
         }
       }
     };
@@ -59,7 +59,7 @@ const ProtectedRootLayout = () => {
 
   // Update habit function that syncs with data service
   const updateHabits = async (newHabits: Habit[] | ((prev: Habit[]) => Habit[])) => {
-    if (typeof newHabits === 'function') {
+    if (typeof newHabits === "function") {
       setHabits(newHabits);
     } else {
       setHabits(newHabits);

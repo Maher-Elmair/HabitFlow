@@ -13,9 +13,7 @@ const Topbar = () => {
             <h1 className="bg-linear-to-r from-primary to-chart-4 bg-clip-text text-transparent text-xl rtl">
               HabitFlow
             </h1>
-            <p className="text-xs text-muted-foreground/80">
-              Build better habits
-            </p>
+            <p className="text-xs text-muted-foreground/80">Build better habits</p>
           </div>
         </div>
         <ThemeToggle showLabel={true} />

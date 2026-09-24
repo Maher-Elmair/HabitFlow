@@ -74,7 +74,7 @@ export interface DashboardProps {
 
 export interface HabitCardProps {
   habit: HabitWithCompletion;
-  onToggle: (id: string) => void;
+  onToggle: (id: string) => void | Promise<void>;
   onEdit: (habit: Habit) => void;
   onDelete: (id: string) => void;
 }
