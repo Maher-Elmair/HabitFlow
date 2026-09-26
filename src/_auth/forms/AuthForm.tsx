@@ -18,16 +18,8 @@ import { Separator } from "@/components/ui/separator";
 import { Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-  updateProfile,
-  GoogleAuthProvider,
-  GithubAuthProvider,
-  signInWithPopup,
-} from "firebase/auth";
-import { auth } from "@/lib/firebaseConfig";
-import { Link, useLocation } from "react-router";
+import { signInWithEmail, signUpWithEmail, signInWithProvider } from "@/lib/auth";
+import { Link, useLocation } from "@tanstack/react-router";
 
 // Validation schemas
 const SigninSchema = z.object({
@@ -65,14 +57,11 @@ const AuthForm = () => {
     try {
       if (isSignIn) {
         const { email, password } = values as z.infer<typeof SigninSchema>;
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmail(email, password);
         toast.success("Logged in successfully!");
       } else {
         const { fullName, email, password } = values as z.infer<typeof SignupSchema>;
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCredential.user, {
-          displayName: fullName,
-        });
+        await signUpWithEmail(email, password, fullName);
         toast.success("Account created successfully!");
       }
     } catch (error: unknown) {
@@ -83,9 +72,8 @@ const AuthForm = () => {
 
   // Google login
   const handleGoogleLogin = async () => {
-    const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithProvider("google");
       toast.success("Logged in with Google!");
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "An error occurred";
@@ -95,9 +83,8 @@ const AuthForm = () => {
 
   // GitHub login
   const handleGithubLogin = async () => {
-    const provider = new GithubAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
+      await signInWithProvider("github");
       toast.success("Logged in with GitHub!");
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "An error occurred";

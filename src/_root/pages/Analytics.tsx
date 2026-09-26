@@ -12,7 +12,7 @@ import {
   Trophy,
   Activity,
 } from "lucide-react";
-import { useOutletContext } from "react-router";
+import { useHabitsContext } from "@/context/HabitsContext";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import {
   BarChart,
@@ -30,14 +30,17 @@ import type { Habit, HabitCompletion } from "@/types";
 import { dataService } from "@/services/dataService";
 import { useEffect, useState } from "react";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
-
-interface OutletContext {
-  habits: Habit[];
-  setHabits: (habits: Habit[]) => void;
-}
+import {
+  isHabitActiveOnDate,
+  getLastNDateStrings,
+  getMonthDateStrings,
+  countActiveHabitsOnDate,
+  countActiveHabitsAcrossDates,
+} from "@/lib/habitDateUtils";
+import { formatDateForApp as formatDate } from "@/lib/streak";
 
 const Analytics = () => {
-  const { habits } = useOutletContext<OutletContext>();
+  const { habits } = useHabitsContext();
   const [completions, setCompletions] = useState<HabitCompletion[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -60,41 +63,10 @@ const Analytics = () => {
 
   // Calculate today's date for accurate daily calculations
   const today = new Date();
-  const todayStr = today.toISOString().split("T")[0];
-
-  // Helper function to format date as YYYY-MM-DD
-  const formatDate = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
+  const todayStr = formatDate(today);
 
   // Calculate habits active today - FIXED: More accurate calculation
-  const getActiveHabitsToday = () => {
-    return habits.filter((habit) => {
-      const startDate = new Date(habit.startDate || "2025-01-01");
-      const endDate = habit.endDate ? new Date(habit.endDate) : null;
-
-      // Normalize dates for comparison
-      const normalizedToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-      const normalizedStartDate = new Date(
-        startDate.getFullYear(),
-        startDate.getMonth(),
-        startDate.getDate(),
-      );
-      const normalizedEndDate = endDate
-        ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-        : null;
-
-      const isAfterStart = normalizedToday >= normalizedStartDate;
-      const isBeforeEnd = !normalizedEndDate || normalizedToday <= normalizedEndDate;
-
-      return isAfterStart && isBeforeEnd;
-    });
-  };
-
-  const activeHabitsToday = getActiveHabitsToday();
+  const activeHabitsToday = habits.filter((habit) => isHabitActiveOnDate(habit, todayStr));
   const totalHabits = habits.length;
   const totalActiveHabitsToday = activeHabitsToday.length;
 
@@ -114,123 +86,26 @@ const Analytics = () => {
     streaks.length > 0 ? Math.round(streaks.reduce((a, b) => a + b, 0) / streaks.length) : 0;
   const activeStreaks = streaks.filter((streak) => streak > 0).length;
 
-  // Calculate weekly consistency - FIXED: More accurate calculation
-  const getLast7DaysCompletions = () => {
-    const last7Days: string[] = [];
-    for (let i = 0; i < 7; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      last7Days.push(formatDate(date));
-    }
+  const last7Days = getLastNDateStrings(7, today);
+  const last30Days = getLastNDateStrings(30, today);
 
-    return completions.filter((comp) => last7Days.includes(comp.date) && comp.completed);
-  };
+  const countCompletionsIn = (dateStrings: string[]) =>
+    completions.filter((comp) => dateStrings.includes(comp.date) && comp.completed).length;
 
-  const last7DaysCompletions = getLast7DaysCompletions();
+  const rate = (done: number, possible: number) =>
+    possible > 0 ? Math.round((done / possible) * 100) : 0;
 
-  // Calculate total possible completions in last 7 days
-  const getTotalPossibleCompletionsLast7Days = () => {
-    let totalPossible = 0;
-    for (let i = 0; i < 7; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dateStr = formatDate(date);
+  // Reusable derived counts so JSX doesn't recompute loops inline
+  const last7DaysCompletions = countCompletionsIn(last7Days);
+  const last30DaysCompletions = countCompletionsIn(last30Days);
+  const totalPossibleCompletionsLast7Days = countActiveHabitsAcrossDates(habits, last7Days);
+  const totalPossibleCompletionsLast30Days = countActiveHabitsAcrossDates(habits, last30Days);
 
-      const activeHabitsOnDate = habits.filter((habit) => {
-        const startDate = new Date(habit.startDate || "2025-01-01");
-        const endDate = habit.endDate ? new Date(habit.endDate) : null;
-        const checkDate = new Date(dateStr + "T00:00:00");
+  // Weekly consistency
+  const weeklyConsistency = rate(last7DaysCompletions, totalPossibleCompletionsLast7Days);
 
-        const normalizedCheckDate = new Date(
-          checkDate.getFullYear(),
-          checkDate.getMonth(),
-          checkDate.getDate(),
-        );
-        const normalizedStartDate = new Date(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate(),
-        );
-        const normalizedEndDate = endDate
-          ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-          : null;
-
-        const isActive =
-          normalizedCheckDate >= normalizedStartDate &&
-          (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
-
-        return isActive;
-      }).length;
-
-      totalPossible += activeHabitsOnDate;
-    }
-    return totalPossible;
-  };
-
-  const totalPossibleCompletionsLast7Days = getTotalPossibleCompletionsLast7Days();
-  const weeklyConsistency =
-    totalPossibleCompletionsLast7Days > 0
-      ? Math.round((last7DaysCompletions.length / totalPossibleCompletionsLast7Days) * 100)
-      : 0;
-
-  // Calculate monthly consistency - FIXED: More accurate calculation
-  const getLast30DaysCompletions = () => {
-    const last30Days: string[] = [];
-    for (let i = 0; i < 30; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      last30Days.push(formatDate(date));
-    }
-
-    return completions.filter((comp) => last30Days.includes(comp.date) && comp.completed);
-  };
-
-  const last30DaysCompletions = getLast30DaysCompletions();
-
-  // Calculate total possible completions in last 30 days
-  const getTotalPossibleCompletionsLast30Days = () => {
-    let totalPossible = 0;
-    for (let i = 0; i < 30; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      const dateStr = formatDate(date);
-
-      const activeHabitsOnDate = habits.filter((habit) => {
-        const startDate = new Date(habit.startDate || "2025-01-01");
-        const endDate = habit.endDate ? new Date(habit.endDate) : null;
-        const checkDate = new Date(dateStr + "T00:00:00");
-
-        const normalizedCheckDate = new Date(
-          checkDate.getFullYear(),
-          checkDate.getMonth(),
-          checkDate.getDate(),
-        );
-        const normalizedStartDate = new Date(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate(),
-        );
-        const normalizedEndDate = endDate
-          ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-          : null;
-
-        const isActive =
-          normalizedCheckDate >= normalizedStartDate &&
-          (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
-
-        return isActive;
-      }).length;
-
-      totalPossible += activeHabitsOnDate;
-    }
-    return totalPossible;
-  };
-
-  const totalPossibleCompletionsLast30Days = getTotalPossibleCompletionsLast30Days();
-  const monthlyConsistency =
-    totalPossibleCompletionsLast30Days > 0
-      ? Math.round((last30DaysCompletions.length / totalPossibleCompletionsLast30Days) * 100)
-      : 0;
+  // Monthly consistency
+  const monthlyConsistency = rate(last30DaysCompletions, totalPossibleCompletionsLast30Days);
 
   // Calculate total completion time (estimate based on habit frequency)
   const totalCompletionTime = habits.reduce((total, habit) => {
@@ -244,7 +119,6 @@ const Analytics = () => {
   // Generate realistic weekly data based on actual completions - FIXED: More accurate
   const getWeeklyData = () => {
     const daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const today = new Date();
 
     return daysOfWeek.map((day, index) => {
       // Calculate date for each day of current week
@@ -252,42 +126,10 @@ const Analytics = () => {
       date.setDate(today.getDate() - today.getDay() + index);
       const dateStr = formatDate(date);
 
-      // Count completions for that day
-      const dayCompletions = completions.filter(
-        (comp) => comp.date === dateStr && comp.completed,
-      ).length;
-
-      // Count active habits for that day
-      const activeHabitsOnDate = habits.filter((habit) => {
-        const startDate = new Date(habit.startDate || "2025-01-01");
-        const endDate = habit.endDate ? new Date(habit.endDate) : null;
-        const checkDate = new Date(dateStr + "T00:00:00");
-
-        const normalizedCheckDate = new Date(
-          checkDate.getFullYear(),
-          checkDate.getMonth(),
-          checkDate.getDate(),
-        );
-        const normalizedStartDate = new Date(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate(),
-        );
-        const normalizedEndDate = endDate
-          ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-          : null;
-
-        const isActive =
-          normalizedCheckDate >= normalizedStartDate &&
-          (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
-
-        return isActive;
-      }).length;
-
       return {
         day,
-        completed: dayCompletions,
-        active: activeHabitsOnDate,
+        completed: completions.filter((comp) => comp.date === dateStr && comp.completed).length,
+        active: countActiveHabitsOnDate(habits, dateStr),
         date: dateStr,
       };
     });
@@ -295,10 +137,8 @@ const Analytics = () => {
 
   // Generate monthly trend data - FIXED: More accurate
   const getMonthlyTrendData = () => {
-    const months = [];
-    const today = new Date();
-
-    for (let i = 5; i >= 0; i--) {
+    return Array.from({ length: 6 }, (_, idx) => {
+      const i = 5 - idx;
       const date = new Date(today.getFullYear(), today.getMonth() - i, 1);
       const monthName = date.toLocaleDateString("en-US", { month: "short" });
       const year = date.getFullYear();
@@ -313,57 +153,18 @@ const Analytics = () => {
         );
       }).length;
 
-      // Count total possible completions for this month
-      let totalPossibleCompletions = 0;
-      const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+      const totalPossibleCompletions = countActiveHabitsAcrossDates(
+        habits,
+        getMonthDateStrings(date),
+      );
 
-      for (let day = 1; day <= daysInMonth; day++) {
-        const currentDate = new Date(date.getFullYear(), date.getMonth(), day);
-        const dateStr = formatDate(currentDate);
-
-        const activeHabitsOnDate = habits.filter((habit) => {
-          const startDate = new Date(habit.startDate || "2025-01-01");
-          const endDate = habit.endDate ? new Date(habit.endDate) : null;
-          const checkDate = new Date(dateStr + "T00:00:00");
-
-          const normalizedCheckDate = new Date(
-            checkDate.getFullYear(),
-            checkDate.getMonth(),
-            checkDate.getDate(),
-          );
-          const normalizedStartDate = new Date(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            startDate.getDate(),
-          );
-          const normalizedEndDate = endDate
-            ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-            : null;
-
-          const isActive =
-            normalizedCheckDate >= normalizedStartDate &&
-            (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
-
-          return isActive;
-        }).length;
-
-        totalPossibleCompletions += activeHabitsOnDate;
-      }
-
-      const consistency =
-        totalPossibleCompletions > 0
-          ? Math.round((monthCompletions / totalPossibleCompletions) * 100)
-          : 0;
-
-      months.push({
+      return {
         month: `${monthName} '${String(year).slice(2)}`,
         completions: monthCompletions,
         possible: totalPossibleCompletions,
-        consistency: consistency,
-      });
-    }
-
-    return months;
+        consistency: rate(monthCompletions, totalPossibleCompletions),
+      };
+    });
   };
 
   const weeklyData = getWeeklyData();
@@ -392,55 +193,13 @@ const Analytics = () => {
       categoryHabits.some((h) => h.id === c.habitId && c.completed),
     ).length;
 
-    // Calculate total possible completions for these habits
-    let totalPossibleCompletions = 0;
-    const last30Days: string[] = [];
-    for (let i = 0; i < 30; i++) {
-      const date = new Date();
-      date.setDate(date.getDate() - i);
-      last30Days.push(formatDate(date));
-    }
-
-    last30Days.forEach((dateStr) => {
-      const activeHabitsOnDate = categoryHabits.filter((habit) => {
-        const startDate = new Date(habit.startDate || "2025-01-01");
-        const endDate = habit.endDate ? new Date(habit.endDate) : null;
-        const checkDate = new Date(dateStr + "T00:00:00");
-
-        const normalizedCheckDate = new Date(
-          checkDate.getFullYear(),
-          checkDate.getMonth(),
-          checkDate.getDate(),
-        );
-        const normalizedStartDate = new Date(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate(),
-        );
-        const normalizedEndDate = endDate
-          ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-          : null;
-
-        const isActive =
-          normalizedCheckDate >= normalizedStartDate &&
-          (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate);
-
-        return isActive;
-      }).length;
-
-      totalPossibleCompletions += activeHabitsOnDate;
-    });
-
-    const consistency =
-      totalPossibleCompletions > 0
-        ? Math.round((totalCompletions / totalPossibleCompletions) * 100)
-        : 0;
+    const totalPossibleCompletions = countActiveHabitsAcrossDates(categoryHabits, last30Days);
 
     return {
       category,
       totalCompletions,
       totalPossibleCompletions,
-      consistency: consistency,
+      consistency: rate(totalCompletions, totalPossibleCompletions),
       habitCount: categoryHabits.length,
     };
   });
@@ -450,54 +209,14 @@ const Analytics = () => {
     .map((habit) => {
       const habitCompletions = completions.filter((c) => c.habitId === habit.id && c.completed);
 
-      // Calculate total possible completions for this habit in last 30 days
-      let totalPossibleCompletions = 0;
-      for (let i = 0; i < 30; i++) {
-        const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateStr = formatDate(date);
-
-        const isActiveOnDate = (() => {
-          const startDate = new Date(habit.startDate || "2025-01-01");
-          const endDate = habit.endDate ? new Date(habit.endDate) : null;
-          const checkDate = new Date(dateStr + "T00:00:00");
-
-          const normalizedCheckDate = new Date(
-            checkDate.getFullYear(),
-            checkDate.getMonth(),
-            checkDate.getDate(),
-          );
-          const normalizedStartDate = new Date(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            startDate.getDate(),
-          );
-          const normalizedEndDate = endDate
-            ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-            : null;
-
-          return (
-            normalizedCheckDate >= normalizedStartDate &&
-            (!normalizedEndDate || normalizedCheckDate <= normalizedEndDate)
-          );
-        })();
-
-        if (isActiveOnDate) {
-          totalPossibleCompletions++;
-        }
-      }
-
-      const completionRate =
-        totalPossibleCompletions > 0
-          ? Math.round((habitCompletions.length / totalPossibleCompletions) * 100)
-          : 0;
+      const totalPossibleCompletions = countActiveHabitsAcrossDates([habit], last30Days);
 
       const dailyAverage =
         habitCompletions.length > 0 ? (habitCompletions.length / 30).toFixed(1) : "0";
 
       return {
         ...habit,
-        completionRate: completionRate,
+        completionRate: rate(habitCompletions.length, totalPossibleCompletions),
         totalCompletions: habitCompletions.length,
         totalPossibleCompletions: totalPossibleCompletions,
         dailyAverage: dailyAverage,
@@ -604,7 +323,7 @@ const Analytics = () => {
               <p className="text-sm text-muted-foreground">Weekly Consistency</p>
               <h2 className="mt-1 text-2xl font-bold">{weeklyConsistency}%</h2>
               <p className="text-xs text-muted-foreground mt-1">
-                {last7DaysCompletions.length} completions this week
+                {last7DaysCompletions} completions this week
               </p>
             </div>
             <div className="w-12 h-12 rounded-full bg-chart-2/20 flex items-center justify-center">
@@ -650,7 +369,7 @@ const Analytics = () => {
               <p className="text-sm text-muted-foreground">Monthly Consistency</p>
               <h2 className="mt-1 text-2xl font-bold">{monthlyConsistency}%</h2>
               <p className="text-xs text-muted-foreground mt-1">
-                {last30DaysCompletions.length} completions
+                {last30DaysCompletions} completions
               </p>
             </div>
             <div className="w-12 h-12 rounded-full bg-blue-500/20 flex items-center justify-center">
@@ -794,9 +513,9 @@ const Analytics = () => {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
-                  data={Object.entries(categoryData).map(([category, habits]) => ({
+                  data={Object.entries(categoryData).map(([category, categoryHabitsList]) => ({
                     name: category,
-                    value: habits.length,
+                    value: categoryHabitsList.length,
                   }))}
                   cx="50%"
                   cy="50%"

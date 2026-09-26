@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useOutletContext } from "react-router";
-import { signOut, onAuthStateChanged } from "firebase/auth";
-import type { User } from "firebase/auth";
-import { auth } from "@/lib/firebaseConfig";
+import { useNavigate } from "@tanstack/react-router";
+import { useHabitsContext } from "@/context/HabitsContext";
+import { formatDateForApp } from "@/lib/streak";
+import { onAuthChanged, signOutUser, type AppUser } from "@/lib/auth";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
+  LogIn,
   LogOutIcon,
   Pencil,
   Calendar,
@@ -39,7 +40,7 @@ interface ProfileContext {
 }
 
 const Profile = () => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -57,11 +58,11 @@ const Profile = () => {
   const [isDeletingAll, setIsDeletingAll] = useState(false);
 
   const navigate = useNavigate();
-  const { habits, setHabits } = useOutletContext<ProfileContext>();
+  const { habits, setHabits } = useHabitsContext();
 
   // Listen for Firebase authentication state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+    const unsubscribe = onAuthChanged(async (currentUser) => {
       setUser(currentUser);
 
       if (currentUser) {
@@ -69,7 +70,13 @@ const Profile = () => {
           // Try to load profile from localStorage first
           let userProfile = await dataService.getUserProfile();
 
-          // If no saved profile exists, create one from Firebase data
+          // If the saved profile belongs to a different account (e.g. a stale
+          // demo profile from before real sign-in), discard it.
+          if (userProfile && userProfile.id !== currentUser.uid) {
+            userProfile = null;
+          }
+
+          // If no valid profile exists, create one from Firebase data
           if (!userProfile) {
             userProfile = await dataService.createUserProfileFromFirebase(currentUser);
           }
@@ -102,9 +109,11 @@ const Profile = () => {
   // Handle user logout
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await signOutUser();
+      await dataService.clearUserProfile();
       toast.success("You have been logged out successfully!");
-      navigate("/sign-in");
+      // Stay in the app after logout — the user simply continues as guest.
+      navigate({ to: "/" });
     } catch (error: unknown) {
       if (error instanceof Error) {
         toast.error("Failed to logout: " + error.message);
@@ -161,9 +170,10 @@ const Profile = () => {
 
     try {
       await dataService.deleteHabit(habitToDelete.id);
+      const refreshed = await dataService.getHabits();
 
       const deletedHabitName = habitToDelete.name;
-      setHabits((prevHabits) => prevHabits.filter((habit) => habit.id !== habitToDelete.id));
+      setHabits(refreshed);
 
       toast.success("Habit deleted successfully!", {
         description: `"${deletedHabitName}" has been removed from your habits.`,
@@ -195,12 +205,6 @@ const Profile = () => {
       if (editingHabit) {
         // Update existing habit
         await dataService.updateHabit(editingHabit.id, habitData);
-
-        setHabits((prevHabits) =>
-          prevHabits.map((habit) =>
-            habit.id === editingHabit.id ? { ...habit, ...habitData } : habit,
-          ),
-        );
       } else {
         // Create new habit
         const newHabit: Habit = {
@@ -212,7 +216,7 @@ const Profile = () => {
           color: habitData.color || "#0D9488",
           frequencyType: habitData.frequencyType || "Daily",
           targetCount: habitData.targetCount || 1,
-          startDate: habitData.startDate || new Date().toISOString().split("T")[0],
+          startDate: habitData.startDate || formatDateForApp(new Date()),
           endDate: habitData.endDate,
           priorityLevel: habitData.priorityLevel || "Medium",
           reminderTime: habitData.reminderTime,
@@ -222,8 +226,10 @@ const Profile = () => {
         };
 
         await dataService.addHabit(newHabit);
-        setHabits((prevHabits) => [...prevHabits, newHabit]);
       }
+      // Re-sync from the store (the source of truth) so local state can never
+      // drift from what was actually persisted.
+      setHabits(await dataService.getHabits());
     } catch (error) {
       console.error("Error saving habit:", error);
       toast.error("Failed to save habit");
@@ -244,13 +250,10 @@ const Profile = () => {
     setIsDeletingAll(true);
 
     try {
-      // Delete all habits one by one
-      for (const habit of habits) {
-        await dataService.deleteHabit(habit.id);
-      }
+      // Single-pass delete (one storage write instead of one per habit)
+      await dataService.deleteAllHabits();
 
-      // Clear the habits list
-      setHabits([]);
+      setHabits(await dataService.getHabits());
 
       toast.success("All habits deleted successfully!", {
         description: `All ${habits.length} habits have been removed.`,
@@ -273,15 +276,13 @@ const Profile = () => {
     return <LoadingSpinner message="Loading profile..." />;
   }
 
-  if (!user || !profile) {
-    return (
-      <div className="text-center mt-10 text-muted-foreground">
-        <p>Please sign in to view your profile.</p>
-      </div>
-    );
-  }
-
-  const { name, email, avatar, bio } = profile;
+  // Offline-first: guests can use the whole app. `user`/`profile` are only
+  // present after an explicit (optional) sign-in.
+  const isGuest = !user;
+  const name = profile?.name ?? "Guest";
+  const email = profile?.email ?? "";
+  const avatar = profile?.avatar;
+  const bio = profile?.bio;
 
   return (
     <div className="w-full">
@@ -293,36 +294,69 @@ const Profile = () => {
         </p>
       </div>
 
-      {/* Profile Information Card */}
-      <Card className="p-4 sm:p-6 mt-4 bg-linear-to-br from-primary/10 via-card to-card border-border rounded-2xl">
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
-          <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-primary/20 shrink-0">
-            <AvatarImage src={avatar} alt={name} />
-            <AvatarFallback className="bg-primary text-primary-foreground text-xl sm:text-2xl">
-              {name.charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-
-          <div className="flex-1 w-full text-center sm:text-left">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
-              <div className="flex-1">
-                <h2 className="text-lg sm:text-xl font-medium mb-1 break-word">{name}</h2>
-                <p className="text-xs sm:text-sm text-muted-foreground break-word">{email}</p>
+      {isGuest ? (
+        <Card className="p-4 sm:p-6 mt-4 bg-linear-to-br from-primary/10 via-card to-card border-border rounded-2xl">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+            <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-primary/20 shrink-0">
+              <AvatarFallback className="bg-primary text-primary-foreground text-xl sm:text-2xl">
+                G
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 w-full text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 justify-center sm:justify-start mb-1">
+                    <h2 className="text-lg sm:text-xl font-medium">Guest</h2>
+                    <span className="bg-primary/10 text-primary text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap">
+                      Guest mode
+                    </span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Browsing as guest — your data is saved on this device only.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => navigate({ to: "/sign-in" })}
+                  className="rounded-lg cursor-pointer w-full sm:w-auto shrink-0"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Sign in to back up your data
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                className="rounded-lg cursor-pointer w-full sm:w-auto mt-2 sm:mt-0"
-                onClick={() => setIsModalOpen(true)}
-              >
-                <Pencil className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
-                Edit Profile
-              </Button>
             </div>
-            <p className="text-sm text-muted-foreground mt-2 sm:mt-0 break-word">{bio}</p>
           </div>
-        </div>
-      </Card>
+        </Card>
+      ) : (
+        <Card className="p-4 sm:p-6 mt-4 bg-linear-to-br from-primary/10 via-card to-card border-border rounded-2xl">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+            <Avatar className="w-20 h-20 sm:w-24 sm:h-24 border-4 border-primary/20 shrink-0">
+              <AvatarImage src={avatar} alt={name} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-xl sm:text-2xl">
+                {name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+
+            <div className="flex-1 w-full text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-2">
+                <div className="flex-1">
+                  <h2 className="text-lg sm:text-xl font-medium mb-1 break-word">{name}</h2>
+                  <p className="text-xs sm:text-sm text-muted-foreground break-word">{email}</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-lg cursor-pointer w-full sm:w-auto mt-2 sm:mt-0"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  <Pencil className="w-3 h-3 sm:w-4 sm:h-4 mr-2" />
+                  Edit Profile
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground mt-2 sm:mt-0 break-word">{bio}</p>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Current Habits Section */}
       <Card className="p-6 mt-6 bg-card border-border rounded-2xl">
@@ -489,33 +523,37 @@ const Profile = () => {
         )}
       </Card>
 
-      {/* Account Actions Card */}
-      <Card className="p-6 mt-6 bg-card border-border rounded-2xl">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-center sm:text-left">
-            <h4 className="mb-1">Account Actions</h4>
-            <p className="text-sm text-muted-foreground">
-              Manage your session and account settings
-            </p>
-          </div>
-          <Button
-            variant="destructive"
-            onClick={handleOpenLogoutDialog}
-            className="rounded-lg cursor-pointer w-full sm:w-auto"
-          >
-            <LogOutIcon className="w-4 h-4 mr-2" />
-            Logout
-          </Button>
-        </div>
-      </Card>
+      {!isGuest && profile && (
+        <>
+          {/* Account Actions Card */}
+          <Card className="p-6 mt-6 bg-card border-border rounded-2xl">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="text-center sm:text-left">
+                <h4 className="mb-1">Account Actions</h4>
+                <p className="text-sm text-muted-foreground">
+                  Manage your session and account settings
+                </p>
+              </div>
+              <Button
+                variant="destructive"
+                onClick={handleOpenLogoutDialog}
+                className="rounded-lg cursor-pointer w-full sm:w-auto"
+              >
+                <LogOutIcon className="w-4 h-4 mr-2" />
+                Logout
+              </Button>
+            </div>
+          </Card>
 
-      {/* Edit Profile Modal */}
-      <EditProfileModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveProfile}
-        profile={profile}
-      />
+          {/* Edit Profile Modal */}
+          <EditProfileModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSave={handleSaveProfile}
+            profile={profile}
+          />
+        </>
+      )}
 
       {/* Add/Edit Habit Modal */}
       <AddEditHabit
@@ -560,11 +598,13 @@ const Profile = () => {
       />
 
       {/* Logout Confirmation Dialog */}
-      <LogoutConfirmationDialog
-        isOpen={isLogoutDialogOpen}
-        onClose={() => setIsLogoutDialogOpen(false)}
-        onConfirm={handleLogout}
-      />
+      {!isGuest && (
+        <LogoutConfirmationDialog
+          isOpen={isLogoutDialogOpen}
+          onClose={() => setIsLogoutDialogOpen(false)}
+          onConfirm={handleLogout}
+        />
+      )}
     </div>
   );
 };

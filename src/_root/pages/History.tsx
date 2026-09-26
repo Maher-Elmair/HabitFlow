@@ -3,13 +3,15 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { HabitCard } from "@/components/shared/HabitCard";
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
-import { useOutletContext } from "react-router";
+import { useHabitsContext } from "@/context/HabitsContext";
 import { dataService } from "@/services/dataService";
 import type { HabitWithCompletion, Habit, HabitCompletion } from "@/types";
 import { AddEditHabit } from "@/components/shared/addEditHabit";
 import { DeleteConfirmationDialog } from "@/components/shared/DeleteConfirmationDialog";
 import { toast } from "sonner";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
+import { calculateHabitStreak, formatDateForApp } from "@/lib/streak";
+import { isHabitActiveOnDate } from "@/lib/habitDateUtils";
 
 // Define the context type
 interface HistoryContext {
@@ -21,7 +23,7 @@ export function History(): React.JSX.Element {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [completions, setCompletions] = useState<HabitCompletion[]>([]);
-  const { habits, setHabits } = useOutletContext<HistoryContext>();
+  const { habits, setHabits } = useHabitsContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -30,12 +32,6 @@ export function History(): React.JSX.Element {
   const [loading, setLoading] = useState(true);
 
   // Helper function to format date as YYYY-MM-DD
-  function formatDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
 
   // Load completions for all habits - FIXED: remove habits dependency to prevent re-renders
   useEffect(() => {
@@ -61,9 +57,9 @@ export function History(): React.JSX.Element {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    if (formatDate(date) === formatDate(today)) {
+    if (formatDateForApp(date) === formatDateForApp(today)) {
       return "Today";
-    } else if (formatDate(date) === formatDate(yesterday)) {
+    } else if (formatDateForApp(date) === formatDateForApp(yesterday)) {
       return "Yesterday";
     } else {
       return date.toLocaleDateString("en-US", {
@@ -76,26 +72,9 @@ export function History(): React.JSX.Element {
   }
 
   // Calculate streak for a habit up to a specific date - IMPROVED VERSION
+  // Shared streak implementation - see src/lib/streak.ts
   function calculateStreak(habitId: string, upToDate: string): number {
-    let streak = 0;
-    const dateObj = new Date(upToDate + "T00:00:00");
-
-    // Check consecutive days starting from the target date backwards
-    for (let i = 0; i < 365; i++) {
-      const checkDate = new Date(dateObj);
-      checkDate.setDate(checkDate.getDate() - i);
-      const checkDateStr = formatDate(checkDate);
-
-      const completion = completions.find((c) => c.habitId === habitId && c.date === checkDateStr);
-
-      if (completion?.completed) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-
-    return streak;
+    return calculateHabitStreak(habitId, completions, upToDate);
   }
 
   // Get habits with completion for a specific date
@@ -103,31 +82,7 @@ export function History(): React.JSX.Element {
     const selectedDateObj = new Date(dateStr + "T00:00:00");
 
     return habits
-      .filter((habit) => {
-        const startDate = new Date(habit.startDate || "2025-01-01");
-        const endDate = habit.endDate ? new Date(habit.endDate) : null;
-
-        // Normalize dates to compare only year, month, and day (ignore time)
-        const normalizedSelectedDate = new Date(
-          selectedDateObj.getFullYear(),
-          selectedDateObj.getMonth(),
-          selectedDateObj.getDate(),
-        );
-        const normalizedStartDate = new Date(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate(),
-        );
-        const normalizedEndDate = endDate
-          ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-          : null;
-
-        // Check if habit should be active on this date
-        const isAfterStart = normalizedSelectedDate >= normalizedStartDate;
-        const isBeforeEnd = !normalizedEndDate || normalizedSelectedDate <= normalizedEndDate;
-
-        return isAfterStart && isBeforeEnd;
-      })
+      .filter((habit) => isHabitActiveOnDate(habit, dateStr))
       .map((habit) => {
         const completion = completions.find((c) => c.habitId === habit.id && c.date === dateStr);
 
@@ -245,10 +200,11 @@ export function History(): React.JSX.Element {
 
     try {
       await dataService.deleteHabit(habitToDelete.id);
+      const refreshed = await dataService.getHabits();
 
       const deletedHabitName = habitToDelete.name;
 
-      setHabits((prevHabits) => prevHabits.filter((habit) => habit.id !== habitToDelete.id));
+      setHabits(refreshed);
 
       // Also remove related completions from local state
       setCompletions((prev) => prev.filter((c) => c.habitId !== habitToDelete.id));
@@ -278,15 +234,9 @@ export function History(): React.JSX.Element {
         // Update existing habit
         await dataService.updateHabit(editingHabit.id, habitData);
 
-        setHabits((prevHabits) =>
-          prevHabits.map((habit) =>
-            habit.id === editingHabit.id ? { ...habit, ...habitData } : habit,
-          ),
-        );
-
         toast.success("Habit updated successfully!");
       } else {
-        // Create new habit - use dataService's formatDate method
+        // Create new habit - use the shared YYYY-MM-DD formatter
         const newHabit: Habit = {
           id: Date.now().toString(),
           name: habitData.name || "",
@@ -297,7 +247,7 @@ export function History(): React.JSX.Element {
           frequencyType: habitData.frequencyType || "Daily",
           targetCount: habitData.targetCount || 1,
           // Use the provided start date or today's date, properly formatted
-          startDate: habitData.startDate || dataService.formatDateForApp(new Date()),
+          startDate: habitData.startDate || formatDateForApp(new Date()),
           endDate: habitData.endDate,
           priorityLevel: habitData.priorityLevel || "Medium",
           reminderTime: habitData.reminderTime,
@@ -308,15 +258,14 @@ export function History(): React.JSX.Element {
 
         await dataService.addHabit(newHabit);
 
-        // Update habits state only, no need to reload completions
-        const updatedHabits = await dataService.getHabits();
-        setHabits(updatedHabits);
-
         toast.success("Habit created successfully!");
       }
 
       setIsModalOpen(false);
       setEditingHabit(null);
+      // Re-sync from the store (the source of truth) so local state can never
+      // drift from what was actually persisted.
+      setHabits(await dataService.getHabits());
     } catch (error) {
       console.error("Error saving habit:", error);
       toast.error("Failed to save habit");
@@ -325,40 +274,17 @@ export function History(): React.JSX.Element {
 
   // Check if a date has any completed habits
   function hasCompletedHabits(date: Date): boolean {
-    const dateStr = formatDate(date);
+    const dateStr = formatDateForApp(date);
     return completions.some((c) => c.date === dateStr && c.completed);
   }
 
   // Get habits for a specific date to show in calendar
   function getHabitsForCalendarDate(date: Date): Habit[] {
-    const dateStr = formatDate(date);
-    const selectedDateObj = new Date(dateStr + "T00:00:00");
+    const dateStr = formatDateForApp(date);
 
     return habits.filter((habit) => {
-      // Check if habit is active on this date
-      const startDate = new Date(habit.startDate || "2025-01-01");
-      const endDate = habit.endDate ? new Date(habit.endDate) : null;
-
-      // Normalize dates for comparison
-      const normalizedSelectedDate = new Date(
-        selectedDateObj.getFullYear(),
-        selectedDateObj.getMonth(),
-        selectedDateObj.getDate(),
-      );
-      const normalizedStartDate = new Date(
-        startDate.getFullYear(),
-        startDate.getMonth(),
-        startDate.getDate(),
-      );
-      const normalizedEndDate = endDate
-        ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-        : null;
-
-      const isActive =
-        normalizedSelectedDate >= normalizedStartDate &&
-        (!normalizedEndDate || normalizedSelectedDate <= normalizedEndDate);
-
-      if (!isActive) return false;
+      // Shared active-date check (single source of truth)
+      if (!isHabitActiveOnDate(habit, dateStr)) return false;
 
       // Check if habit is completed on this date
       const completion = completions.find((c) => c.habitId === habit.id && c.date === dateStr);
@@ -409,7 +335,7 @@ export function History(): React.JSX.Element {
     currentMonth.getMonth() === today.getMonth() &&
     currentMonth.getFullYear() === today.getFullYear();
 
-  const selectedDateStr = formatDate(selectedDate);
+  const selectedDateStr = formatDateForApp(selectedDate);
   const habitsForSelectedDate = getHabitsForDate(selectedDateStr);
   const stats = getDateStats(selectedDateStr);
 
@@ -490,8 +416,8 @@ export function History(): React.JSX.Element {
             <div className="grid grid-cols-7 gap-1">
               {daysInMonth.map((date, index) => {
                 const isCurrentMonthDate = date.getMonth() === currentMonth.getMonth();
-                const isToday = formatDate(date) === formatDate(today);
-                const isSelected = formatDate(date) === formatDate(selectedDate);
+                const isToday = formatDateForApp(date) === formatDateForApp(today);
+                const isSelected = formatDateForApp(date) === formatDateForApp(selectedDate);
                 const hasHabits = hasCompletedHabits(date);
                 const dayHabits = getHabitsForCalendarDate(date);
 

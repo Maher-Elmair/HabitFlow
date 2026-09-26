@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useOutletContext } from "react-router";
+import { useHabitsContext } from "@/context/HabitsContext";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -11,6 +11,8 @@ import { DeleteConfirmationDialog } from "@/components/shared/DeleteConfirmation
 import { toast } from "sonner";
 import { dataService } from "@/services/dataService";
 import LoadingSpinner from "@/components/shared/LoadingSpinner";
+import { calculateHabitStreak, formatDateForApp } from "@/lib/streak";
+import { isHabitActiveOnDate } from "@/lib/habitDateUtils";
 
 interface HomeContext {
   habits: Habit[];
@@ -18,7 +20,7 @@ interface HomeContext {
 }
 
 const Home = () => {
-  const { habits, setHabits } = useOutletContext<HomeContext>();
+  const { habits, setHabits } = useHabitsContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -34,12 +36,6 @@ const Home = () => {
   const isToday = selectedDate.toDateString() === new Date().toDateString();
 
   // Format date as YYYY-MM-DD
-  const formatDate = (date: Date): string => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
 
   // Load completions for all habits - FIXED VERSION
   useEffect(() => {
@@ -65,31 +61,7 @@ const Home = () => {
       const selectedDateObj = new Date(dateStr + "T00:00:00");
 
       return habits
-        .filter((habit) => {
-          const startDate = new Date(habit.startDate || "2025-01-01");
-          const endDate = habit.endDate ? new Date(habit.endDate) : null;
-
-          // Normalize dates to compare only year, month, and day (ignore time)
-          const normalizedSelectedDate = new Date(
-            selectedDateObj.getFullYear(),
-            selectedDateObj.getMonth(),
-            selectedDateObj.getDate(),
-          );
-          const normalizedStartDate = new Date(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            startDate.getDate(),
-          );
-          const normalizedEndDate = endDate
-            ? new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate())
-            : null;
-
-          // Check if habit should be active on this date
-          const isAfterStart = normalizedSelectedDate >= normalizedStartDate;
-          const isBeforeEnd = !normalizedEndDate || normalizedSelectedDate <= normalizedEndDate;
-
-          return isAfterStart && isBeforeEnd;
-        })
+        .filter((habit) => isHabitActiveOnDate(habit, dateStr))
         .map((habit) => {
           const completion = completions.find((c) => c.habitId === habit.id && c.date === dateStr);
 
@@ -110,30 +82,13 @@ const Home = () => {
   );
 
   // Calculate streak for a habit up to a specific date - FIXED VERSION
-  const calculateStreak = (habitId: string, upToDate: string): number => {
-    let streak = 0;
-    const dateObj = new Date(upToDate + "T00:00:00");
-
-    // Check consecutive days starting from the target date backwards
-    for (let i = 0; i < 365; i++) {
-      const checkDate = new Date(dateObj);
-      checkDate.setDate(checkDate.getDate() - i);
-      const checkDateStr = formatDate(checkDate);
-
-      const completion = completions.find((c) => c.habitId === habitId && c.date === checkDateStr);
-
-      if (completion?.completed) {
-        streak++;
-      } else {
-        break;
-      }
-    }
-
-    return streak;
-  };
+  // Streak logic lives in one place (src/lib/streak.ts) so Home, History
+  // and Analytics can never disagree about a habit's streak.
+  const calculateStreak = (habitId: string, upToDate: string): number =>
+    calculateHabitStreak(habitId, completions, upToDate);
 
   // Get today's habits
-  const selectedDateStr = formatDate(selectedDate);
+  const selectedDateStr = formatDateForApp(selectedDate);
   const todayHabits = getHabitsForDate(selectedDateStr);
 
   // Calculate stats
@@ -160,7 +115,7 @@ const Home = () => {
   const handleToggleHabit = useCallback(
     async (id: string) => {
       try {
-        const dateStr = formatDate(selectedDate);
+        const dateStr = formatDateForApp(selectedDate);
 
         console.log(`Toggling habit ${id} for date ${dateStr}`);
 
@@ -215,9 +170,10 @@ const Home = () => {
 
     try {
       await dataService.deleteHabit(habitToDelete.id);
+      const refreshed = await dataService.getHabits();
 
       const deletedHabitName = habitToDelete.name;
-      setHabits((prevHabits) => prevHabits.filter((habit) => habit.id !== habitToDelete.id));
+      setHabits(refreshed);
 
       // Also remove related completions from local state
       setCompletions((prev) => prev.filter((c) => c.habitId !== habitToDelete.id));
@@ -253,12 +209,6 @@ const Home = () => {
         // Update existing habit
         await dataService.updateHabit(editingHabit.id, habitData);
 
-        setHabits((prevHabits) =>
-          prevHabits.map((habit) =>
-            habit.id === editingHabit.id ? { ...habit, ...habitData } : habit,
-          ),
-        );
-
         toast.success("Habit updated successfully!");
       } else {
         // Create new habit
@@ -271,7 +221,7 @@ const Home = () => {
           color: habitData.color || "#0D9488",
           frequencyType: habitData.frequencyType || "Daily",
           targetCount: habitData.targetCount || 1,
-          startDate: habitData.startDate || new Date().toISOString().split("T")[0],
+          startDate: habitData.startDate || formatDateForApp(new Date()),
           endDate: habitData.endDate,
           priorityLevel: habitData.priorityLevel || "Medium",
           reminderTime: habitData.reminderTime,
@@ -281,13 +231,15 @@ const Home = () => {
         };
 
         await dataService.addHabit(newHabit);
-        setHabits((prevHabits) => [...prevHabits, newHabit]);
 
         toast.success("Habit created successfully!");
       }
 
       setIsModalOpen(false);
       setEditingHabit(null);
+      // Re-sync from the store (the source of truth) so local state can never
+      // drift from what was actually persisted.
+      setHabits(await dataService.getHabits());
     } catch (error) {
       console.error("Error saving habit:", error);
       toast.error("Failed to save habit");
