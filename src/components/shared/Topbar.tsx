@@ -10,7 +10,7 @@ const Topbar = () => {
             <Sparkles className="w-6 h-6 text-white" />
           </div>
           <div className="flex flex-col items-start">
-            <h1 className="bg-linear-to-r from-primary to-chart-4 bg-clip-text text-transparent text-xl rtl">
+            <h1 className="bg-linear-to-r from-primary to-chart-4 bg-clip-text text-transparent text-xl">
               HabitFlow
             </h1>
             <p className="text-xs text-muted-foreground/80">Build better habits</p>

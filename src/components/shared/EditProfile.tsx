@@ -81,7 +81,7 @@ function EditProfileModal({
               type="email"
               value={email}
               readOnly
-              onChange={(e) => setEmail(e.target.value)}
+
               placeholder="your.email@example.com"
               className="bg-input-background border-border rounded-lg"
             />

@@ -26,6 +26,7 @@ import dayjs from "dayjs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
+import { formatDateForApp } from "@/lib/streak";
 import type { AddEditHabitModalProps, Habit, FrequencyType, PriorityLevel } from "@/types";
 
 const PRESET_COLORS: string[] = [
@@ -88,9 +89,21 @@ export function AddEditHabit({
     onDrop: (acceptedFiles) => {
       if (acceptedFiles && acceptedFiles.length > 0) {
         const file = acceptedFiles[0];
-        const imageUrl = URL.createObjectURL(file);
-        setImagePreview(imageUrl);
-        setImageUrl(imageUrl);
+        // Read as a base64 data URL so the image survives a page refresh.
+        // URL.createObjectURL() only lives for the current document session,
+        // which is why saved habit images used to disappear on reload.
+        const reader = new FileReader();
+        reader.onload = () => {
+          const dataUrl = typeof reader.result === "string" ? reader.result : "";
+          if (!dataUrl) {
+            toast.error("Could not read that image");
+            return;
+          }
+          setImagePreview(dataUrl);
+          setImageUrl(dataUrl);
+        };
+        reader.onerror = () => toast.error("Could not read that image");
+        reader.readAsDataURL(file);
       }
     },
   });
@@ -155,8 +168,10 @@ export function AddEditHabit({
       color: color,
       frequencyType: frequencyType,
       targetCount: parseInt(targetCount) || 1,
-      startDate: startDate?.toISOString(),
-      endDate: endDate?.toISOString(),
+      // Store as YYYY-MM-DD: dataService and every streak/date comparison
+      // use that format, so toISOString() here caused silent mismatches.
+      startDate: startDate ? formatDateForApp(startDate) : undefined,
+      endDate: endDate ? formatDateForApp(endDate) : undefined,
       priorityLevel: priorityLevel,
       reminderTime: reminderTime || undefined,
     };

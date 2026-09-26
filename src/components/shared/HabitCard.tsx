@@ -33,13 +33,21 @@ export function HabitCard({
     setIsCompleted(habit.completed);
   }, [habit.completed]);
 
-  const handleToggle = (event: React.MouseEvent) => {
+  const handleToggle = async (event: React.MouseEvent) => {
     event.preventDefault();
     event.stopPropagation();
 
-    const newCompleted = !isCompleted;
+    const previous = isCompleted;
+    const newCompleted = !previous;
+    // Optimistic update, rolled back if the save fails so the card can never
+    // show a completed state that was never persisted.
     setIsCompleted(newCompleted);
-    onToggle(habit.id);
+    try {
+      await onToggle(habit.id);
+    } catch (error) {
+      console.error("Failed to toggle habit:", error);
+      setIsCompleted(previous);
+    }
   };
 
   // Get priority color

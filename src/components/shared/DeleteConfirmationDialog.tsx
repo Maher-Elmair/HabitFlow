@@ -43,7 +43,7 @@ export function DeleteConfirmationDialog({
   const dialogDescription = description || (
     <>
       Are you sure you want to delete{" "}
-      <span className="font-medium text-foreground bg-muted/50 px-2 py-1 rounded-md  ">
+      <span className="font-medium text-foreground bg-muted/50 px-2 py-1 rounded-md">
         {habitName || "this habit"}
       </span>
       ? This will permanently remove the habit and all its tracking data. This action cannot be
