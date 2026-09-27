@@ -433,25 +433,23 @@ const Analytics = () => {
           </div>
 
           <ChartContainer config={chartConfig} className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weeklyData}>
-                <XAxis
-                  dataKey="day"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <ChartTooltip content={<ChartTooltipContent />} cursor={false} />
-                <Bar dataKey="completed" fill="var(--color-completed)" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <BarChart data={weeklyData}>
+              <XAxis
+                dataKey="day"
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} cursor={false} />
+              <Bar dataKey="completed" fill="var(--color-completed)" radius={[8, 8, 0, 0]} />
+            </BarChart>
           </ChartContainer>
         </Card>
 
@@ -468,32 +466,30 @@ const Analytics = () => {
           </div>
 
           <ChartContainer config={trendConfig} className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlyData}>
-                <XAxis
-                  dataKey="month"
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <YAxis
-                  stroke="hsl(var(--muted-foreground))"
-                  fontSize={12}
-                  tickLine={false}
-                  axisLine={false}
-                />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Line
-                  type="monotone"
-                  dataKey="completions"
-                  stroke="var(--color-trend)"
-                  strokeWidth={3}
-                  dot={{ fill: "var(--color-trend)", strokeWidth: 2, r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <LineChart data={monthlyData}>
+              <XAxis
+                dataKey="month"
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                stroke="hsl(var(--muted-foreground))"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <ChartTooltip content={<ChartTooltipContent />} />
+              <Line
+                type="monotone"
+                dataKey="completions"
+                stroke="var(--color-trend)"
+                strokeWidth={3}
+                dot={{ fill: "var(--color-trend)", strokeWidth: 2, r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
           </ChartContainer>
         </Card>
       </div>
