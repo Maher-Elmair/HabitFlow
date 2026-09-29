@@ -74,7 +74,7 @@
   /* Color Scheme */
   color-scheme: light dark;
   color: rgba(15, 20, 25, 0.87);
-  background-color: #F8FAFA;
+  background-color: #f8fafa;
 
   /* Font Rendering */
   font-synthesis: none;
@@ -92,20 +92,20 @@
   /* Light Mode Colors - Teal & Aqua HabitFlow Theme */
   --background: oklch(0.972 0.004 193); /* #F8FAFA */
   --foreground: oklch(0.203 0.028 257); /* #0F1419 */
-  --card: oklch(1.000 0.000 0); /* #ffffff */
+  --card: oklch(1 0 0); /* #ffffff */
   --card-foreground: oklch(0.203 0.028 257); /* #0F1419 */
-  --popover: oklch(1.000 0.000 0); /* #ffffff */
+  --popover: oklch(1 0 0); /* #ffffff */
   --popover-foreground: oklch(0.203 0.028 257); /* #0F1419 */
   --primary: oklch(0.602 0.124 192); /* #0D9488 */
-  --primary-foreground: oklch(1.000 0.000 0); /* #ffffff */
+  --primary-foreground: oklch(1 0 0); /* #ffffff */
   --secondary: oklch(0.929 0.035 183); /* #E0F2F1 */
   --secondary-foreground: oklch(0.203 0.028 257); /* #0F1419 */
   --muted: oklch(0.956 0.009 238); /* #F1F5F9 */
   --muted-foreground: oklch(0.578 0.061 248); /* #64748B */
-  --accent: oklch(0.946 0.070 179); /* #CCFBF1 */
+  --accent: oklch(0.946 0.07 179); /* #CCFBF1 */
   --accent-foreground: oklch(0.203 0.028 257); /* #0F1419 */
   --destructive: oklch(0.637 0.204 27); /* #EF4444 */
-  --destructive-foreground: oklch(1.000 0.000 0); /* #ffffff */
+  --destructive-foreground: oklch(1 0 0); /* #ffffff */
   --border: oklch(0.935 0.013 248); /* #E2E8F0 */
   --input: transparent;
   --input-background: oklch(0.972 0.005 244); /* #F8FAFC */
@@ -120,10 +120,10 @@
   --chart-5: oklch(0.906 0.081 177); /* #99F6E4 */
 
   /* Sidebar Colors - Teal HabitFlow Theme */
-  --sidebar: oklch(1.000 0.000 0); /* #ffffff */
+  --sidebar: oklch(1 0 0); /* #ffffff */
   --sidebar-foreground: oklch(0.203 0.028 257); /* #0F1419 */
   --sidebar-primary: oklch(0.602 0.124 192); /* #0D9488 */
-  --sidebar-primary-foreground: oklch(1.000 0.000 0); /* #ffffff */
+  --sidebar-primary-foreground: oklch(1 0 0); /* #ffffff */
   --sidebar-accent: oklch(0.956 0.009 238); /* #F1F5F9 */
   --sidebar-accent-foreground: oklch(0.203 0.028 257); /* #0F1419 */
   --sidebar-border: oklch(0.935 0.013 248); /* #E2E8F0 */
@@ -156,17 +156,19 @@
   --popover: oklch(0.247 0.033 257); /* #1A1F26 */
   --popover-foreground: oklch(0.956 0.009 238); /* #F1F5F9 */
   --primary: oklch(0.602 0.124 192); /* #0D9488 */
-  --primary-foreground: oklch(1.000 0.000 0); /* #ffffff */
+  --primary-foreground: oklch(1 0 0); /* #ffffff */
   --secondary: oklch(0.307 0.049 191); /* #1E3A3A */
   --secondary-foreground: oklch(0.956 0.009 238); /* #F1F5F9 */
-  --muted: oklch(0.285 0.030 255); /* #262D35 */
-  --muted-foreground: oklch(0.700 0.040 236); /* #94A3B8 */
+  --muted: oklch(0.285 0.03 255); /* #262D35 */
+  --muted-foreground: oklch(0.7 0.04 236); /* #94A3B8 */
   --accent: oklch(0.347 0.064 182); /* #134E4A */
   --accent-foreground: oklch(0.956 0.009 238); /* #F1F5F9 */
   --destructive: oklch(0.637 0.204 27); /* #EF4444 */
   --destructive-foreground: oklch(0.956 0.009 238); /* #F1F5F9 */
   --border: oklch(0.325 0.035 257); /* #2D3748 */
   --input: oklch(0.247 0.033 257); /* #1A1F26 */
+  --input-background: oklch(0.285 0.03 255); /* #262D35 — matches dark --muted */
+  --switch-background: oklch(0.285 0.03 255); /* #262D35 — matches dark --muted */
   --ring: oklch(0.602 0.124 192); /* #0D9488 */
 
   /* Dark Mode Chart Colors - Teal Progress Theme */
@@ -180,8 +182,8 @@
   --sidebar: oklch(0.247 0.033 257); /* #1A1F26 */
   --sidebar-foreground: oklch(0.956 0.009 238); /* #F1F5F9 */
   --sidebar-primary: oklch(0.602 0.124 192); /* #0D9488 */
-  --sidebar-primary-foreground: oklch(1.000 0.000 0); /* #ffffff */
-  --sidebar-accent: oklch(0.285 0.030 255); /* #262D35 */
+  --sidebar-primary-foreground: oklch(1 0 0); /* #ffffff */
+  --sidebar-accent: oklch(0.285 0.03 255); /* #262D35 */
   --sidebar-accent-foreground: oklch(0.956 0.009 238); /* #F1F5F9 */
   --sidebar-border: oklch(0.325 0.035 257); /* #2D3748 */
   --sidebar-ring: oklch(0.602 0.124 192); /* #0D9488 */

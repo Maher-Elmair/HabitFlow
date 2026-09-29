@@ -7,12 +7,13 @@ import {
   HeadContent,
   Scripts,
   type ErrorComponentProps,
+  ScriptOnce,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLabError } from "../lib/Lab-error-reporting";
-import { ThemeProvider } from "@/theme/theme-provider";
+import { ThemeProvider, THEME_STORAGE_KEY, DEFAULT_THEME } from "@/theme/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
@@ -108,13 +109,38 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
+/**
+ * Runs once in the browser, before React hydrates, so the correct theme
+ * class ("light" or "dark") is on <html> from the very first paint.
+ * Without this, the page would briefly flash the light theme even when
+ * the user has dark mode saved, because ThemeProvider only applies the
+ * class inside a useEffect (which only runs after hydration).
+ *
+ * Keep this logic in sync with the effect in `theme-provider.tsx` — it
+ * intentionally mirrors the same rule: saved value if valid, else DEFAULT_THEME.
+ */
+const themeInitScript = `
+(function () {
+  try {
+    var storageKey = ${JSON.stringify(THEME_STORAGE_KEY)};
+    var defaultTheme = ${JSON.stringify(DEFAULT_THEME)};
+    var saved = localStorage.getItem(storageKey);
+    var theme = saved === "light" || saved === "dark" ? saved : defaultTheme;
+    document.documentElement.classList.add(theme);
+  } catch (error) {
+    document.documentElement.classList.add(${JSON.stringify(DEFAULT_THEME)});
+  }
+})();
+`;
+
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
-      <body suppressHydrationWarning>
+      <body>
+        <ScriptOnce>{themeInitScript}</ScriptOnce>
         {children}
         <Scripts />
       </body>

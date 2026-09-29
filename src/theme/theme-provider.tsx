@@ -13,6 +13,12 @@ import { Moon, Sun } from "lucide-react";
 
 type ThemeMode = "light" | "dark";
 
+//  The localStorage key where the user's theme choice is saved.
+export const THEME_STORAGE_KEY = "habitflow-theme";
+
+//  The default theme for the first visit (when no preference is saved).
+export const DEFAULT_THEME: ThemeMode = "dark";
+
 interface ThemeContextValue {
   mode: ThemeMode;
   toggleTheme: () => void;
@@ -34,17 +40,17 @@ interface ThemeProviderProps {
 }
 
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [mode, setMode] = useState<ThemeMode>("dark");
+  const [mode, setMode] = useState<ThemeMode>(DEFAULT_THEME);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Load saved theme preference
   useEffect(() => {
-    const saved = localStorage.getItem("habitflow-theme") as ThemeMode | null;
+    const saved = localStorage.getItem(THEME_STORAGE_KEY) as ThemeMode | null;
     if (saved === "light" || saved === "dark") {
       setMode(saved);
     } else {
-      // Default to dark mode if no preference saved
-      setMode("dark");
+      // Default theme if no preference saved
+      setMode(DEFAULT_THEME);
     }
     setIsInitialized(true);
   }, []);
@@ -56,7 +62,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
     const root = document.documentElement;
     root.classList.remove("light", "dark");
     root.classList.add(mode);
-    localStorage.setItem("habitflow-theme", mode);
+    localStorage.setItem(THEME_STORAGE_KEY, mode);
   }, [mode, isInitialized]);
 
   const toggleTheme = () => {
