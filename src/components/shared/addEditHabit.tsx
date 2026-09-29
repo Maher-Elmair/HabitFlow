@@ -127,6 +127,21 @@ export function AddEditHabit({
     }
   }, [habit, isOpen]);
 
+  // Radix leaves `pointer-events: none` stuck on <body> when this Dialog
+  // closes while a nested Popover/Select (start/end date, category, etc.)
+  // was used — a known upstream Radix UI bug (radix-ui/primitives#1241,
+  // #3317, #3445). Reset it as a safety net so the page never freezes.
+  useEffect(() => {
+    if (isOpen) {
+      return undefined;
+    }
+
+    const timeout = setTimeout(() => {
+      document.body.style.pointerEvents = "";
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [isOpen]);
+
   const resetForm = (): void => {
     setName("");
     setDescription("");
