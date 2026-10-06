@@ -6,55 +6,40 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/HabitFlow-Habit%20Tracker-blue?style=for-the-badge" />
-  <img src="https://img.shields.io/badge/React-19.1.1-61dafb?style=for-the-badge&logo=react" />
-  <img src="https://img.shields.io/badge/TypeScript-5.9.3-3178c6?style=for-the-badge&logo=typescript" />
-  <img src="https://img.shields.io/badge/Vite-7.1.7-646CFF?style=for-the-badge&logo=vite" />
+  <img src="https://img.shields.io/badge/React-19.2-61dafb?style=for-the-badge&logo=react" />
+  <img src="https://img.shields.io/badge/TypeScript-5.8-3178c6?style=for-the-badge&logo=typescript" />
+  <img src="https://img.shields.io/badge/TanStack%20Start-SSR-FF4154?style=for-the-badge&logo=tanstack" />
+  <img src="https://img.shields.io/badge/Vite-8-646CFF?style=for-the-badge&logo=vite" />
 </p>
 
 ---
 
 ## ✨ Overview
 
-**HabitFlow** is a modern and feature-rich habit tracking app built with **React** and **TypeScript**.
-It helps you **build consistent habits**, **analyze progress**, and **track achievements** with a clean, minimal interface.
+**HabitFlow** is a modern and feature-rich habit tracking app built with **React**, **TypeScript**, and **TanStack Start**.
+It helps you **build consistent habits**, **analyze progress**, and **track achievements** with a clean, minimal interface — fully server-rendered for a fast first load.
 
 ---
 
-## 📸 Screenshots
+## 📸 Preview
 
-### 🔐 Authentication
-
-![Authentication](public/assets/screenshots/signin.png)
-
-### 🏠 Dashboard
-
-![Dashboard](public/assets/screenshots/Dashboard.png)
-
-### 📅 History
-
-![History](public/assets/screenshots/History.png)
-
-### 📊 Analytics
-
-![Analytics](public/assets/screenshots/Analytics.png)
-
-### 👤 Profile
-
-![Profile](public/assets/screenshots/profile.png)
+![HabitFlow Preview](public/assets/screenshots/HabitFlow_Preview.png)
 
 ---
 
 ## 🛠️ Tech Stack
 
-| Category              | Tools & Libraries                                 |
-| --------------------- | ------------------------------------------------- |
-| **Core**              | React 19.1.1, TypeScript 5.9.3, Vite 7.1.7        |
-| **UI**                | Tailwind CSS, shadcn/ui, Radix UI, Lucide Icons   |
-| **State & Forms**     | React Hook Form, Zod, @hookform/resolvers         |
-| **Charts**            | Recharts (Bar, Line, Pie charts)                  |
-| **Backend / Storage** | Local Storage (primary)                           |
-| **Utilities**         | date-fns, dayjs, moment, react-big-calendar       |
-| **Routing & UX**      | React Router, Sonner (toast), Motion (animations) |
+| Category              | Tools & Libraries                                              |
+| ---------------------- | ---------------------------------------------------------------- |
+| **Core**               | React 19.2, TypeScript, TanStack Start (SSR), Vite 8             |
+| **Routing**            | TanStack Router — file-based routes under `src/routes/`          |
+| **UI**                 | Tailwind CSS v4, shadcn/ui, Radix UI, Lucide Icons                |
+| **State & Forms**      | React Hook Form, Zod, @hookform/resolvers, TanStack Query         |
+| **Charts**             | Recharts (Bar, Line, Pie charts)                                  |
+| **Authentication**     | Firebase Authentication (Email/Password, Google, GitHub)          |
+| **Data Storage**       | Local Storage (per-device, with a guest/offline mode by default)  |
+| **Animations**         | Motion (Framer Motion)                                            |
+| **Deployment**         | Vercel                                                             |
 
 ---
 
@@ -63,76 +48,98 @@ It helps you **build consistent habits**, **analyze progress**, and **track achi
 ```md
 HabitFlow/
 ├── src/
-│ ├── _auth/ # Authentication logic (Local Storage based)
-│ ├── _root/ # Main app pages (Home, History, Analytics, Profile)
-│ ├── components/ # Reusable UI components
-│ ├── hooks/ # Custom React hooks
-│ ├── lib/ # Storage utilities (LocalStorage)
-│ ├── services/ # Data and logic layer
-│ ├── theme/ # Theme management
-│ ├── styles/ # Global styles & animations
-│ ├── App.tsx
-│ └── App.css
-└── vite.config.ts
+│   ├── routes/           # TanStack Start file-based routes (layouts, pages, root shell)
+│   ├── _auth/forms/        # Sign in / sign up form
+│   ├── _root/pages/          # Home, History, Analytics, Profile page components
+│   ├── components/
+│   │   ├── shared/             # App-specific components (HabitCard, Topbar, dialogs...)
+│   │   └── ui/                  # shadcn/ui primitives
+│   ├── context/                   # HabitsContext (shared habits state)
+│   ├── hooks/                       # Custom hooks
+│   ├── lib/                           # Firebase config, auth, guest id, date/streak utils
+│   ├── services/                        # dataService — local storage persistence layer
+│   ├── theme/                             # Dark/light theme provider
+│   ├── styles.css                           # Tailwind v4 entry point
+│   ├── styles/                                # Extra utility & animation CSS
+│   ├── router.tsx, server.ts, start.ts          # TanStack Start entry points
+│   └── types/                                     # Shared TypeScript types
+├── vite.config.ts
+└── package.json
 ```
 
 ---
 
 ## 🎯 Core Features
 
-| Feature                    | Description                                                                                                                                    |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| 🔐 **Authentication**      | - Email/password login stored in **Local Storage** <br> - Protected routes & session persistence <br> - Secure logout with confirmation dialog |
-| 🧠 **Habit Management**    | - Create, edit, and delete habits <br> - Progress bars & color-coded categories <br> - Custom reminders, priorities, and tags                  |
-| 📅 **Calendar & History**  | - Interactive calendar with streak tracking <br> - Visual daily completion insights                                                            |
-| 📊 **Analytics Dashboard** | - Visual reports with **Recharts** <br> - Category trends, streaks, and success rates                                                          |
-| 👤 **Profile**             | - Custom avatar & bio <br> - Editable personal data                                                                                            |
+| Feature                    | Description                                                                                                                      |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| 🔐 **Authentication**      | - Sign in with Email/Password, Google, or GitHub (Firebase Auth) <br> - Guest mode — start tracking right away, no account needed   |
+| 🧠 **Habit Management**    | - Create, edit, and delete habits <br> - Progress bars & color-coded categories <br> - Custom reminders, priorities, and tags        |
+| 📅 **Calendar & History**  | - Interactive calendar with streak tracking <br> - Visual daily completion insights                                                 |
+| 📊 **Analytics Dashboard** | - Visual reports with **Recharts** <br> - Category trends, streaks, and success rates                                               |
+| 👤 **Profile**             | - Custom avatar & bio <br> - Editable personal data                                                                                 |
 
 ---
 
 ## 🎨 Design System
 
-| Feature                  | Description                   |
-| ------------------------ | ----------------------------- |
-| 🌗 **Dark/Light Mode**   | Seamless theme switching      |
-| ♿ **Accessible UI**     | Built using Radix primitives  |
-| 📱 **Responsive Design** | Optimized for all devices     |
-| ✨ **Smooth Animations** | Motion + Tailwind transitions |
+| Feature                  | Description                        |
+| ------------------------- | ------------------------------------ |
+| 🌗 **Dark/Light Mode**    | Flash-free theme switching on load   |
+| ♿ **Accessible UI**      | Built using Radix primitives         |
+| 📱 **Responsive Design**  | Optimized for all devices            |
+| ✨ **Smooth Animations**  | Motion + Tailwind transitions        |
 
 ---
 
-## 🔒 Security
+## 🔒 Security & Data
 
-| Feature                | Details                                       |
-| ---------------------- | --------------------------------------------- |
-| 🔐 **Authentication**  | Local Storage based (secure for personal use) |
-| 📝 **Validation**      | Zod-based validation                          |
-| 🛡 **Protected Routes** | Auth-protected routes                         |
-| 🔒 **Sanitization**    | XSS & input sanitization                      |
-
----
-
-## 📈 Roadmap
-
-| Upcoming Features          | Status / Notes          |
-| -------------------------- | ----------------------- |
-| React Native app version   | Mobile version          |
-| Push notifications         | Habit reminders         |
-| Habit challenges & sharing | Social features         |
-| CSV / PDF data export      | Export habits & reports |
-| AI habit recommendations   | Smart suggestions       |
-| Offline PWA mode           | Full offline support    |
+| Feature                 | Details                                                              |
+| ------------------------ | ---------------------------------------------------------------------- |
+| 🔐 **Authentication**    | Firebase Authentication (Email/Password, Google, GitHub)               |
+| 📝 **Validation**        | Zod-based form validation                                               |
+| 🛡 **Protected Routes**   | Auth-aware routing                                                       |
+| 💾 **Habit Data**        | Stored locally on your device (not synced to a server yet — see Roadmap) |
 
 ---
 
 ## 🚀 Quick Start
 
 ```bash
-git clone https://github.com/Maher-Elmair/habitflow.git
-cd habitflow
+git clone https://github.com/Maher-Elmair/HabitFlow.git
+cd HabitFlow
 npm install
+```
+
+Create a `.env.local` file in the project root with your Firebase project credentials:
+
+```env
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_MESSAGING_SENDER_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_MEASUREMENT_ID=
+```
+
+Then run:
+
+```bash
 npm run dev
 ```
+
+---
+
+## 📈 Roadmap
+
+| Upcoming Feature                  | Status / Notes                                                           |
+| ----------------------------------- | ---------------------------------------------------------------------------- |
+| ☁️ **Cloud data storage**           | Move habit data from Local Storage to a cloud database (Firestore)           |
+| 📱 **Multi-device access**          | Sign in from your phone, laptop, or any other device and see your habits there |
+| 🔄 **Real-time sync**               | Changes made on one device (completions, streaks, edits) appear instantly on your other devices |
+| 🔔 Push notifications               | Habit reminders                                                              |
+| 🤝 Habit challenges & sharing       | Social features                                                              |
 
 ---
 
@@ -154,6 +161,11 @@ npm run dev
 
 ---
 
-🙌 **Thank you for visiting!**
-If you liked the project, please ⭐ the repository!  
-Contributions, feedback, and PRs are always welcome 🙏
+## 🙌 Thank You
+
+If you found HabitFlow useful or helped you build better habits, please consider giving it a ⭐️  
+Issues, pull requests, and suggestions are always welcome 🙏
+
+---
+
+<h6 align="center"><i>HabitFlow — Built to help you build better habits, one day at a time</i></h6>
